@@ -7,10 +7,11 @@ import {
 } from "aws-lambda";
 import { randomUUID } from "crypto";
 import {
-  audioFilename,
   createAPIGatewayResult,
   DynamoDBTableSchema,
-} from "../common";
+  getAudioKey,
+  getEnvironment,
+} from "./common";
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();
@@ -20,25 +21,7 @@ async function handler(
   context: Context
 ): Promise<APIGatewayProxyResult> {
   try {
-    // Generate a UUID as directory name (S3 prefix)
-    const prefix = randomUUID();
-
-    const bucketName = process.env.BUCKET_NAME;
-    const tableName = process.env.TABLE_NAME;
-
-    if (!bucketName) {
-      throw new Error("Bucket name not specified in environment variables.");
-    }
-
-    if (!tableName) {
-      throw new Error("Table name not specified in environment variables.");
-    }
-
-    // Extract the user ID from the request context (Cognito identity)
-    const userID = event.requestContext?.authorizer?.claims?.sub;
-    if (!userID) {
-      throw new Error("User ID not found in the request context.");
-    }
+    const { bucketName, tableName, userID } = getEnvironment(event);
 
     // Get the audio file from the request body (binary data)
     const body = event.body;
@@ -51,16 +34,15 @@ async function handler(
       );
     }
 
+    // Generate a UUID as directory name (S3 prefix)
+    const prefix = randomUUID();
     // Decode the base64-encoded binary data
     const audioBuffer = Buffer.from(body, isBase64Encoded ? "base64" : "utf-8");
-
-    // Define the S3 key for the audio file
-    const audioKey = `${prefix}/${audioFilename}`;
 
     // Upload the audio file to S3
     const putObjectResult = await s3.putObject({
       Bucket: bucketName,
-      Key: audioKey,
+      Key: getAudioKey(prefix),
       Body: audioBuffer,
       ContentType: "audio/wav",
     });
@@ -76,7 +58,6 @@ async function handler(
       UUID: prefix,
       createdAt: new Date().toISOString(),
       status: "in progress",
-      audio: `s3://${bucketName}/${audioKey}`,
     };
 
     const putItemResult = await dynamoDb.putItem({
@@ -86,7 +67,6 @@ async function handler(
         UUID: { S: item.UUID },
         createdAt: { S: item.createdAt },
         status: { S: item.status },
-        audio: { S: item.audio },
       },
     });
 

@@ -1,8 +1,8 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { handler } from "../lib/api/upload";
-import { audioFilename } from "../lib/common";
+import { handler } from "../../lib/api/upload";
+import { audioFilename } from "../../lib/api/common";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);
