@@ -4,6 +4,7 @@ import { Speak2SeeCdkStack } from "../lib/speak2_see_cdk-stack";
 import { App } from "aws-cdk-lib";
 import { AuthStack } from "../lib/auth-stack";
 import { DataStack } from "../lib/data-stack";
+import { ApiStack } from "../lib/api-stack";
 
 const app = new App();
 const envEU = {
@@ -17,7 +18,12 @@ const dataStack = new DataStack(app, "DataStack", {
 });
 
 const authStack = new AuthStack(app, "AuthStack", { env: envEU });
-
+const apiStack = new ApiStack(app, "ApiStack", {
+  userPool: authStack.userPool,
+  bucket: dataStack.bucket,
+  table: dataStack.table,
+  env: envEU,
+});
 new Speak2SeeCdkStack(app, "Speak2SeeCdkStack", {
   env: envEU,
 });
