@@ -2,7 +2,7 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/get";
-import { getAudioKey, getImageKey } from "../../../lib/api/common";
+import { getAudioKey, getImageKey } from "../../../lib/processing";
 import { sdkStreamMixin } from "@smithy/util-stream";
 import { Readable } from "stream";
 

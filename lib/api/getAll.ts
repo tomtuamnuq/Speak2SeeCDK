@@ -4,12 +4,8 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import {
-  createAPIGatewayResult,
-  getTableName,
-  getUserID,
-  ProcessingStatus,
-} from "./common";
+import { createAPIGatewayResult, getTableName, getUserID } from "./common";
+import { ProcessingStatus } from "../processing";
 
 const dynamoDb = new DynamoDB();
 interface projectionResult {

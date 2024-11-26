@@ -1,7 +1,5 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
 
-export const audioFilename = "audio.wav";
-export const imageFilename = "image.jpg";
 export function createAPIGatewayResult(statusCode: number, body: string) {
   return {
     statusCode: statusCode,
@@ -55,27 +53,4 @@ export function getEnvironment(event: APIGatewayProxyEvent) {
     tableName: getTableName(),
     userID: getUserID(event),
   };
-}
-export function getAudioKey(prefix: string) {
-  // Define the S3 key for the audio file
-  return `${prefix}/${audioFilename}`;
-}
-export function getImageKey(prefix: string) {
-  // Define the S3 key for the generated image
-  return `${prefix}/${imageFilename}`;
-}
-export enum ProcessingStatus {
-  IN_PROGRESS = "in progress",
-  FAILED = "failed",
-  FINISHED = "finished",
-}
-
-// Schema definition with strongly typed attributes
-export interface DynamoDBTableSchema {
-  itemID: string; // primary key - used together with userID for queries
-  userID: string; // User identifier - partition key
-  createdAt: string; // ISO8601 timestamp
-  processingStatus: ProcessingStatus; // Restricted processingStatus values
-  transcription?: string; // Transcription text (optional)
-  prompt?: string; // Prompt for image generation (optional)
 }

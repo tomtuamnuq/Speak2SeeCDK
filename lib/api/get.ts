@@ -5,13 +5,8 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import {
-  createAPIGatewayResult,
-  getEnvironment,
-  getAudioKey,
-  getImageKey,
-  ProcessingStatus,
-} from "./common";
+import { createAPIGatewayResult, getEnvironment } from "./common";
+import { getAudioKey, getImageKey, ProcessingStatus } from "../processing";
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();

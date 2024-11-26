@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/upload";
-import { audioFilename } from "../../../lib/api/common";
+import { AUDIO_FILENAME } from "../../../lib/processing";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);
@@ -61,7 +61,7 @@ describe("Upload Lambda Function", () => {
     expect(s3Call).toMatchObject({
       input: {
         Bucket: bucketName,
-        Key: expect.stringMatching(audioFilename),
+        Key: expect.stringMatching(AUDIO_FILENAME),
         ContentType: "audio/wav",
       },
     });

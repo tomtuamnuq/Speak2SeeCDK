@@ -9,7 +9,7 @@ import {
 import * as dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { ProcessingStatus } from "../../lib/api/common";
+import { ProcessingStatus } from "../../lib/processing";
 
 dotenv.config({
   path: join(__dirname, ".env"),

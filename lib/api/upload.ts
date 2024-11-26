@@ -6,13 +6,12 @@ import {
   Context,
 } from "aws-lambda";
 import { randomUUID } from "crypto";
+import { createAPIGatewayResult, getEnvironment } from "./common";
 import {
-  createAPIGatewayResult,
   DynamoDBTableSchema,
   getAudioKey,
-  getEnvironment,
   ProcessingStatus,
-} from "./common";
+} from "../processing";
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();
