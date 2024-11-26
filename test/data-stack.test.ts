@@ -18,11 +18,11 @@ describe("DataStack", () => {
       TableName: testTableName,
       KeySchema: [
         { AttributeName: "userID", KeyType: "HASH" }, // Partition key
-        { AttributeName: "UUID", KeyType: "RANGE" }, // Sort key
+        { AttributeName: "itemID", KeyType: "RANGE" }, // Sort key
       ],
       AttributeDefinitions: [
         { AttributeName: "userID", AttributeType: "S" },
-        { AttributeName: "UUID", AttributeType: "S" },
+        { AttributeName: "itemID", AttributeType: "S" },
       ],
       BillingMode: "PAY_PER_REQUEST",
     });

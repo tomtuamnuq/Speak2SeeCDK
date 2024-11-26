@@ -75,12 +75,9 @@ describe("Upload Lambda Function", () => {
         TableName: tableName,
         Item: {
           userID: { S: "mock-user-id" },
-          UUID: { S: expect.any(String) },
+          itemID: { S: expect.any(String) },
           createdAt: { S: expect.any(String) },
           status: { S: "in progress" },
-          audio: {
-            S: expect.stringMatching(audioFilename),
-          },
         },
       },
     });

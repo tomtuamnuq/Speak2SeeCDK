@@ -23,7 +23,7 @@ describe("Get Lambda Function", () => {
   const bucketName = "test-bucket";
   const tableName = "test-table";
   const userID = "mock-user-id";
-  const uuid = "mock-uuid";
+  const itemID = "mock-itemID";
   const audioFile = "mock-audio";
   const imageFile = "mock-image";
 
@@ -43,7 +43,7 @@ describe("Get Lambda Function", () => {
       $metadata: { httpStatusCode: 200 },
       Item: {
         userID: { S: userID },
-        UUID: { S: uuid },
+        itemID: { S: itemID },
         status: { S: "finished" },
         transcription: { S: "mock transcription" },
         prompt: { S: "mock prompt" },
@@ -54,7 +54,7 @@ describe("Get Lambda Function", () => {
     s3Mock
       .on(GetObjectCommand, {
         Bucket: bucketName,
-        Key: getAudioKey(uuid),
+        Key: getAudioKey(itemID),
       })
       .resolves({
         $metadata: { httpStatusCode: 200 },
@@ -64,7 +64,7 @@ describe("Get Lambda Function", () => {
     s3Mock
       .on(GetObjectCommand, {
         Bucket: bucketName,
-        Key: getImageKey(uuid),
+        Key: getImageKey(itemID),
       })
       .resolves({
         $metadata: { httpStatusCode: 200 },
@@ -73,7 +73,7 @@ describe("Get Lambda Function", () => {
 
     // Mock API Gateway event
     const mockEvent = {
-      pathParameters: { uuid },
+      pathParameters: { itemID },
       requestContext: {
         authorizer: { claims: { sub: userID } },
       },
@@ -104,7 +104,7 @@ describe("Get Lambda Function", () => {
       $metadata: { httpStatusCode: 200 },
       Item: {
         userID: { S: userID },
-        UUID: { S: uuid },
+        itemID: { S: itemID },
         status: { S: "failed" },
       },
     });
@@ -113,7 +113,7 @@ describe("Get Lambda Function", () => {
     s3Mock
       .on(GetObjectCommand, {
         Bucket: bucketName,
-        Key: getAudioKey(uuid),
+        Key: getAudioKey(itemID),
       })
       .resolves({
         $metadata: { httpStatusCode: 200 },
@@ -122,7 +122,7 @@ describe("Get Lambda Function", () => {
 
     // Mock API Gateway event
     const mockEvent = {
-      pathParameters: { uuid },
+      pathParameters: { itemID },
       requestContext: {
         authorizer: { claims: { sub: userID } },
       },

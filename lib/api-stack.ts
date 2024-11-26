@@ -87,9 +87,9 @@ export class ApiStack extends Stack {
     );
     this.createRoute(
       getLambda,
-      "{uuid}",
+      "{itemID}",
       "GET",
-      this.api.root.addResource("get") // /get/{uuid}
+      this.api.root.addResource("get") // /get/{itemID}
     );
 
     // Output the API endpoint

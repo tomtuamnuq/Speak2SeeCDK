@@ -66,7 +66,7 @@ export function getImageKey(prefix: string) {
 }
 // Schema definition with strongly typed attributes
 export interface DynamoDBTableSchema {
-  UUID: string; // primary key - used together with userID for queries
+  itemID: string; // primary key - used together with userID for queries
   userID: string; // User identifier - partition key
   createdAt: string; // ISO8601 timestamp
   status: "in progress" | "failed" | "finished"; // Restricted status values

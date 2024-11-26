@@ -36,7 +36,7 @@ export class DataStack extends Stack {
     this.table = new Table(this, "DynamoDBTable", {
       tableName: props.tableName,
       partitionKey: { name: "userID", type: AttributeType.STRING }, // Partition key: userID
-      sortKey: { name: "UUID", type: AttributeType.STRING }, // key for common operations: UUID
+      sortKey: { name: "itemID", type: AttributeType.STRING }, // key for common operations: itemID
       billingMode: BillingMode.PAY_PER_REQUEST, // On-demand pricing for scalability
       removalPolicy: RemovalPolicy.DESTROY, // Automatically delete the table when the stack is destroyed
     });

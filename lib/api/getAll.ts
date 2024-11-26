@@ -23,7 +23,7 @@ async function handler(
       ExpressionAttributeValues: {
         ":userID": { S: userID },
       },
-      ProjectionExpression: "UUID",
+      ProjectionExpression: "itemID",
     });
 
     // Check query result metadata
@@ -32,19 +32,19 @@ async function handler(
       throw new Error("Failed to query DynamoDB");
     }
 
-    // Extract UUIDs from the query result or default to an empty array
-    const uuids: string[] =
-      queryResult.Items?.map((item) => item.UUID!.S!) || [];
+    // Extract itemIDs from the query result or default to an empty array
+    const itemIDs: string[] =
+      queryResult.Items?.map((item) => item.itemID!.S!) || [];
 
-    // Return the list of UUIDs to the client
+    // Return the list of itemIDs to the client
     return createAPIGatewayResult(
       200,
       JSON.stringify({
-        uuids,
+        itemIDs,
       })
     );
   } catch (error) {
-    console.error("Error retrieving UUIDs:", error);
+    console.error("Error retrieving itemIDs:", error);
     return createAPIGatewayResult(
       500,
       JSON.stringify({ message: "Internal server error" })

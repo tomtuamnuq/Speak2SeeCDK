@@ -22,8 +22,8 @@ async function handler(
   try {
     const { bucketName, tableName, userID } = getEnvironment(event);
 
-    const uuid = event.pathParameters?.uuid;
-    if (!uuid) {
+    const itemID = event.pathParameters?.itemID;
+    if (!itemID) {
       return createAPIGatewayResult(
         400,
         JSON.stringify({ message: "Processing ID is required" })
@@ -35,7 +35,7 @@ async function handler(
       TableName: tableName,
       Key: {
         userID: { S: userID },
-        UUID: { S: uuid },
+        itemID: { S: itemID },
       },
     });
 
@@ -49,11 +49,11 @@ async function handler(
     }
 
     const item = getItemResult.Item;
-    const audioBlob = await getS3Blob(bucketName, getAudioKey(uuid));
+    const audioBlob = await getS3Blob(bucketName, getAudioKey(itemID));
     const status = item.status.S!;
     // If status is 'finished', fetch additional data
     if (status === "finished") {
-      const imageBlob = await getS3Blob(bucketName, getImageKey(uuid));
+      const imageBlob = await getS3Blob(bucketName, getImageKey(itemID));
       const transcription = item.transcription?.S;
       if (!transcription) {
         throw new Error("Missing transcription for finished audio processing!");

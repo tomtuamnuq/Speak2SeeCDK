@@ -107,7 +107,7 @@ describe("ApiStack", () => {
     });
   });
 
-  test("creates a Lambda function for /get/{uuid} with environment variables set", () => {
+  test("creates a Lambda function for /get/{itemID} with environment variables set", () => {
     template.hasResourceProperties("AWS::Lambda::Function", {
       Handler: "index.handler",
       Runtime: "nodejs20.x",
@@ -128,7 +128,7 @@ describe("ApiStack", () => {
     });
 
     template.hasResourceProperties("AWS::ApiGateway::Resource", {
-      PathPart: "{uuid}",
+      PathPart: "{itemID}",
     });
   });
 

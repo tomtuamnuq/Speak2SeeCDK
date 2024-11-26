@@ -55,7 +55,7 @@ async function handler(
     // Create the DynamoDB entry
     const item: DynamoDBTableSchema = {
       userID: userID,
-      UUID: prefix,
+      itemID: prefix,
       createdAt: new Date().toISOString(),
       status: "in progress",
     };
@@ -64,7 +64,7 @@ async function handler(
       TableName: tableName,
       Item: {
         userID: { S: item.userID },
-        UUID: { S: item.UUID },
+        itemID: { S: item.itemID },
         createdAt: { S: item.createdAt },
         status: { S: item.status },
       },
@@ -75,7 +75,7 @@ async function handler(
       throw new Error("Failed to create DynamoDB item");
     }
 
-    // Return the UUID to the client
+    // Return the itemID to the client
     return createAPIGatewayResult(
       200,
       JSON.stringify({
