@@ -11,6 +11,7 @@ import {
   DynamoDBTableSchema,
   getAudioKey,
   getEnvironment,
+  ProcessingStatus,
 } from "./common";
 
 const s3 = new S3();
@@ -57,7 +58,7 @@ async function handler(
       userID: userID,
       itemID: prefix,
       createdAt: new Date().toISOString(),
-      status: "in progress",
+      processingStatus: ProcessingStatus.IN_PROGRESS,
     };
 
     const putItemResult = await dynamoDb.putItem({
@@ -66,7 +67,7 @@ async function handler(
         userID: { S: item.userID },
         itemID: { S: item.itemID },
         createdAt: { S: item.createdAt },
-        status: { S: item.status },
+        processingStatus: { S: item.processingStatus },
       },
     });
 

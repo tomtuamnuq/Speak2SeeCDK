@@ -10,6 +10,7 @@ import {
   getEnvironment,
   getAudioKey,
   getImageKey,
+  ProcessingStatus,
 } from "./common";
 
 const s3 = new S3();
@@ -50,9 +51,9 @@ async function handler(
 
     const item = getItemResult.Item;
     const audioBlob = await getS3Blob(bucketName, getAudioKey(itemID));
-    const status = item.status.S!;
-    // If status is 'finished', fetch additional data
-    if (status === "finished") {
+    const processingStatus = item.processingStatus.S! as ProcessingStatus;
+    // If processingStatus is 'finished', fetch additional data
+    if (processingStatus === ProcessingStatus.FINISHED) {
       const imageBlob = await getS3Blob(bucketName, getImageKey(itemID));
       const transcription = item.transcription?.S;
       if (!transcription) {
@@ -69,16 +70,16 @@ async function handler(
           image: imageBlob,
           transcription: transcription,
           prompt: prompt,
-          status: status,
+          processingStatus: processingStatus,
         })
       );
     } else {
-      // If status is not 'finished', return the audio file only!
+      // If processingStatus is not 'finished', return the audio file only!
       return createAPIGatewayResult(
         200,
         JSON.stringify({
           audio: audioBlob,
-          status: status,
+          processingStatus: processingStatus,
         })
       );
     }

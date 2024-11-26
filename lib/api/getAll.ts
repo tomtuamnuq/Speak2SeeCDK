@@ -4,10 +4,18 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import { createAPIGatewayResult, getTableName, getUserID } from "./common";
+import {
+  createAPIGatewayResult,
+  getTableName,
+  getUserID,
+  ProcessingStatus,
+} from "./common";
 
 const dynamoDb = new DynamoDB();
-
+interface projectionResult {
+  id: string;
+  processingStatus: ProcessingStatus;
+}
 async function handler(
   event: APIGatewayProxyEvent,
   context: Context
@@ -23,7 +31,7 @@ async function handler(
       ExpressionAttributeValues: {
         ":userID": { S: userID },
       },
-      ProjectionExpression: "itemID",
+      ProjectionExpression: "itemID, processingStatus",
     });
 
     // Check query result metadata
@@ -33,10 +41,13 @@ async function handler(
     }
 
     // Extract itemIDs from the query result or default to an empty array
-    const itemIDs: string[] =
-      queryResult.Items?.map((item) => item.itemID!.S!) || [];
+    const itemIDs: projectionResult[] =
+      queryResult.Items?.map((item) => ({
+        id: item.itemID!.S!,
+        processingStatus: item.processingStatus!.S! as ProcessingStatus,
+      })) || [];
 
-    // Return the list of itemIDs to the client
+    // Return the list of items to the client
     return createAPIGatewayResult(
       200,
       JSON.stringify({
