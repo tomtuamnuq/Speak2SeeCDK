@@ -3,6 +3,7 @@ import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
   Cors,
+  IResource,
   LambdaIntegration,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
@@ -24,36 +25,12 @@ interface ApiStackProps extends StackProps {
 export class ApiStack extends Stack {
   private api: RestApi;
   private authorizer: CognitoUserPoolsAuthorizer;
+  private props: ApiStackProps;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
-    // Create the Lambda function
-    const uploadLambda = new NodejsFunction(this, "UploadFunction", {
-      runtime: Runtime.NODEJS_20_X,
-      handler: "handler",
-      entry: join(__dirname, "api", "upload.ts"),
-      environment: {
-        BUCKET_NAME: props.bucket.bucketName,
-        TABLE_NAME: props.table.tableName,
-      },
-    });
-
-    // Attach specific permissions for S3 and DynamoDB to the Lambda function's IAM role
-    uploadLambda.addToRolePolicy(
-      new PolicyStatement({
-        actions: ["s3:PutObject"], // Only allow PutObject
-        resources: [`${props.bucket.bucketArn}/*`], // Restrict to the bucket
-      })
-    );
-
-    uploadLambda.addToRolePolicy(
-      new PolicyStatement({
-        actions: ["dynamodb:PutItem"], // Only allow PutItem
-        resources: [props.table.tableArn], // Restrict to the DynamoDB table
-      })
-    );
-
+    this.props = props;
     // Create an API Gateway REST API
     this.api = new RestApi(this, "Speak2SeeApi", {
       restApiName: "Speak2SeeService",
@@ -68,16 +45,84 @@ export class ApiStack extends Stack {
       identitySource: "method.request.header.Authorization",
     });
 
-    // Define the /upload resource
-    const uploadResource = this.api.root.addResource("upload", {
+    const uploadLambda = this.createLambda("UploadFunction", "upload.ts");
+    // Attach specific permissions for S3 and DynamoDB to the Lambda function's IAM role
+    uploadLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["s3:PutObject"], // Only allow PutObject
+        resources: [`${props.bucket.bucketArn}/*`], // Restrict to the bucket
+      })
+    );
+    uploadLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["dynamodb:PutItem"], // Only allow PutItem
+        resources: [props.table.tableArn], // Restrict to the DynamoDB table
+      })
+    );
+    this.createRoute(uploadLambda, "upload", "POST", this.api.root);
+
+    const getAllLambda = this.createLambda("GetAllFunction", "getAll.ts");
+    // Attach specific permission for DynamoDB to the Lambda function's IAM role
+    getAllLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["dynamodb:Query"], // Only allow Query
+        resources: [props.table.tableArn], // Restrict to the DynamoDB table
+      })
+    );
+    this.createRoute(getAllLambda, "getAll", "GET", this.api.root);
+
+    const getLambda = this.createLambda("GetFunction", "get.ts");
+    // Attach specific permissions for S3 and DynamoDB to the Lambda function's IAM role
+    getLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["s3:GetObject"], // Only allow GetObject
+        resources: [`${props.bucket.bucketArn}/*`], // Restrict to the bucket
+      })
+    );
+    getLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["dynamodb:GetItem"], // Only allow GetItem
+        resources: [props.table.tableArn], // Restrict to the DynamoDB table
+      })
+    );
+    this.createRoute(
+      getLambda,
+      "{uuid}",
+      "GET",
+      this.api.root.addResource("get") // /get/{uuid}
+    );
+
+    // Output the API endpoint
+    new CfnOutput(this, "ApiEndpoint", {
+      value: this.api.url,
+    });
+  }
+  private createLambda(id: string, file: string) {
+    return new NodejsFunction(this, id, {
+      runtime: Runtime.NODEJS_20_X,
+      handler: "handler",
+      entry: join(__dirname, "api", file),
+      environment: {
+        BUCKET_NAME: this.props.bucket.bucketName,
+        TABLE_NAME: this.props.table.tableName,
+      },
+    });
+  }
+  private createRoute(
+    lambda: NodejsFunction,
+    route: string,
+    method: string,
+    parent: IResource
+  ) {
+    const resource = parent.addResource(route, {
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS, // TODO
-        allowMethods: ["POST"],
+        allowMethods: [method],
       },
     });
 
-    // Add POST method to the /upload resource with Cognito Authorizer
-    uploadResource.addMethod("POST", new LambdaIntegration(uploadLambda), {
+    // Add method to the /route resource with Cognito Authorizer
+    resource.addMethod(method, new LambdaIntegration(lambda), {
       authorizer: this.authorizer,
       authorizationType: AuthorizationType.COGNITO,
       requestParameters: {
@@ -91,11 +136,6 @@ export class ApiStack extends Stack {
           },
         },
       ],
-    });
-
-    // Output the API endpoint
-    new CfnOutput(this, "ApiEndpoint", {
-      value: this.api.url,
     });
   }
 }

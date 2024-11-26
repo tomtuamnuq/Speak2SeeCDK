@@ -73,4 +73,79 @@ describe("ApiStack", () => {
       },
     });
   });
+
+  test("creates a Lambda function for /getAll with environment variables set", () => {
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      Handler: "index.handler",
+      Runtime: "nodejs20.x",
+      Environment: {
+        Variables: {
+          TABLE_NAME: Match.objectLike({
+            "Fn::ImportValue": Match.stringLikeRegexp(
+              "^TestDataStack:ExportsOutputRefDynamoDBTable"
+            ),
+          }),
+        },
+      },
+    });
+
+    template.hasResourceProperties("AWS::ApiGateway::Resource", {
+      PathPart: "getAll",
+    });
+  });
+
+  test("getAll lambda can only query the DynamoDB table", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Effect: "Allow",
+            Action: "dynamodb:Query", // Ensure Query is the only action
+          }),
+        ]),
+      },
+    });
+  });
+
+  test("creates a Lambda function for /get/{uuid} with environment variables set", () => {
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      Handler: "index.handler",
+      Runtime: "nodejs20.x",
+      Environment: {
+        Variables: {
+          BUCKET_NAME: Match.objectLike({
+            "Fn::ImportValue": Match.stringLikeRegexp(
+              "^TestDataStack:ExportsOutputRefS3Bucket"
+            ),
+          }),
+          TABLE_NAME: Match.objectLike({
+            "Fn::ImportValue": Match.stringLikeRegexp(
+              "^TestDataStack:ExportsOutputRefDynamoDBTable"
+            ),
+          }),
+        },
+      },
+    });
+
+    template.hasResourceProperties("AWS::ApiGateway::Resource", {
+      PathPart: "{uuid}",
+    });
+  });
+
+  test("get lambda can only get from DynamoDB and S3", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Effect: "Allow",
+            Action: "s3:GetObject", // Ensure GetObject is the only S3 action
+          }),
+          Match.objectLike({
+            Effect: "Allow",
+            Action: "dynamodb:GetItem", // Ensure GetItem is the only DynamoDB action
+          }),
+        ]),
+      },
+    });
+  });
 });
