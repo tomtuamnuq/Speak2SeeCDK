@@ -1,5 +1,5 @@
 import { Template } from "aws-cdk-lib/assertions";
-import { DataStack } from "../lib/data-stack";
+import { DataStack } from "../../lib/data-stack";
 import { App } from "aws-cdk-lib";
 const testBucketName = "test-bucket-name";
 const testTableName = "test-table-name";

@@ -9,6 +9,7 @@ import {
 import * as dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { ProcessingStatus } from "../../lib/api/common";
 
 dotenv.config({
   path: join(__dirname, ".env"),
@@ -111,7 +112,7 @@ describe("Integration Test: Speak2See REST API", () => {
     console.log(`Retrieved itemIDs: ${response.data.itemIDs}`);
   });
 
-  test("GET /get/{itemID}: Retrieve audio blob and status", async () => {
+  test("GET /get/{itemID}: Retrieve audio blob and processingStatus", async () => {
     const getAllResponse = await axios.get(`${apiEndpoint}getAll`, {
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -121,7 +122,10 @@ describe("Integration Test: Speak2See REST API", () => {
     const itemIDs = getAllResponse.data.itemIDs;
     expect(itemIDs.length).toBeGreaterThan(0);
 
-    const itemID = itemIDs[0];
+    const item = itemIDs[0];
+    expect(item).toHaveProperty("id");
+    expect(item.processingStatus).toBe(ProcessingStatus.IN_PROGRESS);
+    const itemID: string = item.id!;
     console.log(`Using itemID for /get: ${itemID}`);
 
     const getResponse = await axios.get(`${apiEndpoint}get/${itemID}`, {
@@ -132,7 +136,9 @@ describe("Integration Test: Speak2See REST API", () => {
 
     expect(getResponse.status).toBe(200);
     expect(getResponse.data).toHaveProperty("audio");
-    expect(getResponse.data.status).toBe("in progress");
-    console.log("Retrieved audio blob and status: 'in progress'.");
+    expect(getResponse.data.processingStatus).toBe(
+      ProcessingStatus.IN_PROGRESS
+    );
+    console.log("Retrieved audio blob and processingStatus: 'in progress'.");
   });
 });

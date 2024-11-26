@@ -1,8 +1,8 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { handler } from "../../lib/api/upload";
-import { audioFilename } from "../../lib/api/common";
+import { handler } from "../../../lib/api/upload";
+import { audioFilename } from "../../../lib/api/common";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);
@@ -77,7 +77,7 @@ describe("Upload Lambda Function", () => {
           userID: { S: "mock-user-id" },
           itemID: { S: expect.any(String) },
           createdAt: { S: expect.any(String) },
-          status: { S: "in progress" },
+          processingStatus: { S: "in progress" },
         },
       },
     });

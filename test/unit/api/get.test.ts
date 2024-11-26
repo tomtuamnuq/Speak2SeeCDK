@@ -1,8 +1,8 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { handler } from "../../lib/api/get";
-import { getAudioKey, getImageKey } from "../../lib/api/common";
+import { handler } from "../../../lib/api/get";
+import { getAudioKey, getImageKey } from "../../../lib/api/common";
 import { sdkStreamMixin } from "@smithy/util-stream";
 import { Readable } from "stream";
 
@@ -38,13 +38,13 @@ describe("Get Lambda Function", () => {
   });
 
   test("returns audio and image when processing is finished", async () => {
-    // Mock DynamoDB successful response for finished status
+    // Mock DynamoDB successful response for finished processingStatus
     dynamoDbMock.on(GetItemCommand).resolves({
       $metadata: { httpStatusCode: 200 },
       Item: {
         userID: { S: userID },
         itemID: { S: itemID },
-        status: { S: "finished" },
+        processingStatus: { S: "finished" },
         transcription: { S: "mock transcription" },
         prompt: { S: "mock prompt" },
       },
@@ -90,7 +90,7 @@ describe("Get Lambda Function", () => {
       image: encodeBase64(imageFile),
       transcription: "mock transcription",
       prompt: "mock prompt",
-      status: "finished",
+      processingStatus: "finished",
     });
 
     // Verify calls
@@ -99,13 +99,13 @@ describe("Get Lambda Function", () => {
   });
 
   test("returns only audio when processing has failed", async () => {
-    // Mock DynamoDB successful response for failed status
+    // Mock DynamoDB successful response for failed processingStatus
     dynamoDbMock.on(GetItemCommand).resolves({
       $metadata: { httpStatusCode: 200 },
       Item: {
         userID: { S: userID },
         itemID: { S: itemID },
-        status: { S: "failed" },
+        processingStatus: { S: "failed" },
       },
     });
 
@@ -136,7 +136,7 @@ describe("Get Lambda Function", () => {
     const responseBody = JSON.parse(response.body);
     expect(responseBody).toEqual({
       audio: encodeBase64(audioFile),
-      status: "failed",
+      processingStatus: "failed",
     });
 
     // Verify calls

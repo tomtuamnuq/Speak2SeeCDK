@@ -1,5 +1,5 @@
 import { App } from "aws-cdk-lib";
-import { AuthStack } from "../lib/auth-stack";
+import { AuthStack } from "../../lib/auth-stack";
 import { Match, Template } from "aws-cdk-lib/assertions";
 
 describe("AuthStack", () => {

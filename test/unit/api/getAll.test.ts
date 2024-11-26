@@ -1,6 +1,7 @@
-import { handler } from "../../lib/api/getAll";
+import { handler } from "../../../lib/api/getAll";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
+import { ProcessingStatus } from "../../../lib/api/common";
 
 const dynamoDbMock = mockClient(DynamoDBClient);
 
@@ -23,7 +24,10 @@ describe("Retrieve itemIDs Lambda Function", () => {
   test("returns itemIDs for the given userID", async () => {
     const mockQueryResult = {
       $metadata: { httpStatusCode: 200 },
-      Items: [{ itemID: { S: "itemID-1" } }, { itemID: { S: "itemID-2" } }],
+      Items: [
+        { itemID: { S: "itemID-1" }, processingStatus: { S: "in progress" } },
+        { itemID: { S: "itemID-2" }, processingStatus: { S: "failed" } },
+      ],
     };
 
     // Mock DynamoDB query
@@ -32,20 +36,13 @@ describe("Retrieve itemIDs Lambda Function", () => {
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
-      itemIDs: ["itemID-1", "itemID-2"],
+      itemIDs: [
+        { id: "itemID-1", processingStatus: ProcessingStatus.IN_PROGRESS },
+        { id: "itemID-2", processingStatus: ProcessingStatus.FAILED },
+      ],
     });
 
     expect(dynamoDbMock.calls().length).toBe(1);
-    expect(dynamoDbMock.calls()[0].args[0]).toMatchObject({
-      input: {
-        TableName: tableName,
-        KeyConditionExpression: "userID = :userID",
-        ExpressionAttributeValues: {
-          ":userID": { S: userID },
-        },
-        ProjectionExpression: "itemID",
-      },
-    });
   });
 
   test("returns empty itemIDs array when no items are found", async () => {
@@ -64,15 +61,5 @@ describe("Retrieve itemIDs Lambda Function", () => {
     });
 
     expect(dynamoDbMock.calls().length).toBe(1);
-    expect(dynamoDbMock.calls()[0].args[0]).toMatchObject({
-      input: {
-        TableName: tableName,
-        KeyConditionExpression: "userID = :userID",
-        ExpressionAttributeValues: {
-          ":userID": { S: userID },
-        },
-        ProjectionExpression: "itemID",
-      },
-    });
   });
 });

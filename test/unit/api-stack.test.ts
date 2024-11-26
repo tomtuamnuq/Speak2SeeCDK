@@ -1,8 +1,8 @@
 import { Template, Match } from "aws-cdk-lib/assertions";
 import { App } from "aws-cdk-lib";
-import { ApiStack } from "../lib/api-stack";
-import { AuthStack } from "../lib/auth-stack";
-import { DataStack } from "../lib/data-stack";
+import { ApiStack } from "../../lib/api-stack";
+import { AuthStack } from "../../lib/auth-stack";
+import { DataStack } from "../../lib/data-stack";
 
 const bucketName = "test-bucket";
 const tableName = "test-table";
