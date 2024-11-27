@@ -15,11 +15,13 @@ import { Construct } from "constructs";
 import { join } from "path";
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { IStateMachine } from "aws-cdk-lib/aws-stepfunctions";
 
 interface ApiStackProps extends StackProps {
   userPool: IUserPool;
   bucket: IBucket;
   table: ITable;
+  stateMachine: IStateMachine;
 }
 
 export class ApiStack extends Stack {
@@ -53,6 +55,7 @@ export class ApiStack extends Stack {
         resources: [`${props.bucket.bucketArn}/*`], // Restrict to the bucket
       })
     );
+    props.stateMachine.grantStartExecution(uploadLambda);
     uploadLambda.addToRolePolicy(
       new PolicyStatement({
         actions: ["dynamodb:PutItem"], // Only allow PutItem
@@ -105,6 +108,7 @@ export class ApiStack extends Stack {
       environment: {
         BUCKET_NAME: this.props.bucket.bucketName,
         TABLE_NAME: this.props.table.tableName,
+        STATE_MACHINE_ARN: this.props.stateMachine.stateMachineArn,
       },
     });
   }

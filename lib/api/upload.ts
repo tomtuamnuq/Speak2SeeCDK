@@ -6,14 +6,21 @@ import {
   Context,
 } from "aws-lambda";
 import { randomUUID } from "crypto";
-import { createAPIGatewayResult, getEnvironment } from "./common";
+import {
+  createAPIGatewayResult,
+  projectTableItem,
+  getEnvironment,
+  getStateMachineArn,
+} from "./common";
 import {
   DynamoDBTableSchema,
   getAudioKey,
   ProcessingStatus,
 } from "../processing";
+import { SFN } from "@aws-sdk/client-sfn";
 
 const s3 = new S3();
+const sfn = new SFN();
 const dynamoDb = new DynamoDB();
 
 async function handler(
@@ -22,6 +29,7 @@ async function handler(
 ): Promise<APIGatewayProxyResult> {
   try {
     const { bucketName, tableName, userID } = getEnvironment(event);
+    const stateMachineArn = getStateMachineArn();
 
     // Get the audio file from the request body (binary data)
     const body = event.body;
@@ -52,11 +60,29 @@ async function handler(
       throw new Error("Failed to upload audio file to S3");
     }
 
+    // Start the Step Function workflow
+    const startWorkflowResult = await sfn.startExecution({
+      stateMachineArn: stateMachineArn,
+      name: prefix,
+      input: JSON.stringify({
+        directoryName: prefix,
+      }),
+    });
+    if (!startWorkflowResult.startDate || !startWorkflowResult.executionArn) {
+      console.error(
+        "Step function workflow is missing start date or executionArn",
+        startWorkflowResult
+      );
+      throw new Error("Failed to start workflow");
+    }
+    const createdAt = startWorkflowResult.startDate.toISOString();
+
     // Create the DynamoDB entry
     const item: DynamoDBTableSchema = {
       userID: userID,
       itemID: prefix,
-      createdAt: new Date().toISOString(),
+      createdAt: createdAt,
+      executionID: startWorkflowResult.executionArn,
       processingStatus: ProcessingStatus.IN_PROGRESS,
     };
 
@@ -66,6 +92,7 @@ async function handler(
         userID: { S: item.userID },
         itemID: { S: item.itemID },
         createdAt: { S: item.createdAt },
+        executionID: { S: item.executionID },
         processingStatus: { S: item.processingStatus },
       },
     });
@@ -75,13 +102,7 @@ async function handler(
       throw new Error("Failed to create DynamoDB item");
     }
 
-    // Return the itemID to the client
-    return createAPIGatewayResult(
-      200,
-      JSON.stringify({
-        id: prefix,
-      })
-    );
+    return createAPIGatewayResult(200, JSON.stringify(projectTableItem(item)));
   } catch (error) {
     console.error("Error processing upload:", error);
     return createAPIGatewayResult(

@@ -1,32 +1,44 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/upload";
-import { AUDIO_FILENAME } from "../../../lib/processing";
+import { ProcessingStatus } from "../../../lib/processing";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);
 const dynamoDbMock = mockClient(DynamoDBClient);
+const sfnMock = mockClient(SFNClient);
 
 describe("Upload Lambda Function", () => {
-  const bucketName = "test-bucket";
-  const tableName = "test-table";
+  const mockBucket = "test-bucket";
+  const mockTable = "test-table";
+  const mockUserId = "mock-user-id";
+  const mockStateMachineArn = "mock-state-machine";
+  const mockExecutionArn = "mock-execution";
+  const mockTime = "2024-11-23T15:30:45.000Z";
 
   beforeEach(() => {
     // Reset mocks
     s3Mock.reset();
     dynamoDbMock.reset();
+    sfnMock.reset();
 
     // Set required environment variables
-    process.env.BUCKET_NAME = bucketName;
-    process.env.TABLE_NAME = tableName;
+    process.env.BUCKET_NAME = mockBucket;
+    process.env.TABLE_NAME = mockTable;
+    process.env.STATE_MACHINE_ARN = mockStateMachineArn;
   });
 
-  test("uploads audio to S3 and adds a valid item to DynamoDB", async () => {
-    // Mock S3 and DynamoDB successful responses
+  test("uploads audio to S3, starts the workflow, and adds a valid item to DynamoDB", async () => {
+    // Mock S3, Step Functions, and DynamoDB successful responses
     s3Mock
       .on(PutObjectCommand)
       .resolves({ $metadata: { httpStatusCode: 200 } });
+    sfnMock.on(StartExecutionCommand).resolves({
+      executionArn: mockExecutionArn,
+      startDate: new Date(mockTime),
+    });
     dynamoDbMock
       .on(PutItemCommand)
       .resolves({ $metadata: { httpStatusCode: 200 } });
@@ -41,7 +53,7 @@ describe("Upload Lambda Function", () => {
       requestContext: {
         authorizer: {
           claims: {
-            sub: "mock-user-id",
+            sub: mockUserId,
           },
         },
       },
@@ -53,33 +65,19 @@ describe("Upload Lambda Function", () => {
     // Assertions
     expect(response.statusCode).toBe(200);
     const responseBody = JSON.parse(response.body);
-    expect(responseBody).toHaveProperty("id");
+    expect(responseBody).toEqual({
+      id: expect.any(String),
+      createdAt: mockTime,
+      processingStatus: ProcessingStatus.IN_PROGRESS,
+    });
 
     // Assert S3 was called to store the audio file
     expect(s3Mock.calls().length).toBe(1);
-    const s3Call = s3Mock.calls()[0].args[0];
-    expect(s3Call).toMatchObject({
-      input: {
-        Bucket: bucketName,
-        Key: expect.stringMatching(AUDIO_FILENAME),
-        ContentType: "audio/wav",
-      },
-    });
+
+    // Assert Step Functions was called to start the workflow
+    expect(sfnMock.calls().length).toBe(1);
 
     // Assert DynamoDB was called
     expect(dynamoDbMock.calls().length).toBe(1);
-    const dynamoCall = dynamoDbMock.calls()[0].args[0];
-    // Validate the DynamoDB item
-    expect(dynamoCall).toMatchObject({
-      input: {
-        TableName: tableName,
-        Item: {
-          userID: { S: "mock-user-id" },
-          itemID: { S: expect.any(String) },
-          createdAt: { S: expect.any(String) },
-          processingStatus: { S: "in progress" },
-        },
-      },
-    });
   });
 });

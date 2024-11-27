@@ -3,13 +3,13 @@ import { App } from "aws-cdk-lib";
 import { ApiStack } from "../../lib/api-stack";
 import { AuthStack } from "../../lib/auth-stack";
 import { DataStack } from "../../lib/data-stack";
+import { Speak2SeeCdkStack } from "../../lib/speak2_see_cdk-stack";
 
 const bucketName = "test-bucket";
 const tableName = "test-table";
 
 describe("ApiStack", () => {
   let app: App;
-  let stack: ApiStack;
   let template: Template;
 
   beforeEach(() => {
@@ -21,12 +21,17 @@ describe("ApiStack", () => {
       bucketName,
       tableName,
     });
+    const workflowStack = new Speak2SeeCdkStack(app, "TestWorkflowStack", {
+      bucket: dataStack.bucket,
+      table: dataStack.table,
+    });
 
     // Create the ApiStack
-    stack = new ApiStack(app, "TestApiStack", {
+    const stack = new ApiStack(app, "TestApiStack", {
       userPool: authStack.userPool,
       bucket: dataStack.bucket,
       table: dataStack.table,
+      stateMachine: workflowStack.stateMachine,
     });
 
     template = Template.fromStack(stack);
@@ -46,6 +51,11 @@ describe("ApiStack", () => {
           TABLE_NAME: Match.objectLike({
             "Fn::ImportValue": Match.stringLikeRegexp(
               "^TestDataStack:ExportsOutputRefDynamoDBTable"
+            ),
+          }),
+          STATE_MACHINE_ARN: Match.objectLike({
+            "Fn::ImportValue": Match.stringLikeRegexp(
+              "^TestWorkflowStack:ExportsOutputRefTestStateMachine"
             ),
           }),
         },
