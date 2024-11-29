@@ -2,7 +2,11 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/get";
-import { getAudioKey, getImageKey } from "../../../lib/processing";
+import {
+  getAudioKey,
+  getImageKey,
+  ProcessingStatus,
+} from "../../../lib/processing";
 import { encodeBase64, mockS3BodyStream } from "../utils";
 
 // Mock AWS SDK clients
@@ -88,14 +92,14 @@ describe("Get Lambda Function", () => {
     expect(dynamoDbMock.calls().length).toBe(1);
   });
 
-  test("returns only audio when processing has failed", async () => {
+  test("returns only audio when audio processing has failed", async () => {
     // Mock DynamoDB successful response for failed processingStatus
     dynamoDbMock.on(GetItemCommand).resolves({
       $metadata: { httpStatusCode: 200 },
       Item: {
         userID: { S: userID },
         itemID: { S: itemID },
-        processingStatus: { S: "failed" },
+        processingStatus: { S: "audio transcription failed" },
       },
     });
 
@@ -126,7 +130,7 @@ describe("Get Lambda Function", () => {
     const responseBody = JSON.parse(response.body);
     expect(responseBody).toEqual({
       audio: encodeBase64(audioFile),
-      processingStatus: "failed",
+      processingStatus: ProcessingStatus.TRANSCRIPTION_FAILED,
     });
 
     // Verify calls

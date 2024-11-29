@@ -26,7 +26,10 @@ describe("Retrieve itemIDs Lambda Function", () => {
       $metadata: { httpStatusCode: 200 },
       Items: [
         { itemID: { S: "itemID-1" }, processingStatus: { S: "in progress" } },
-        { itemID: { S: "itemID-2" }, processingStatus: { S: "failed" } },
+        {
+          itemID: { S: "itemID-2" },
+          processingStatus: { S: "image generation failed" },
+        },
       ],
     };
 
@@ -38,7 +41,7 @@ describe("Retrieve itemIDs Lambda Function", () => {
     expect(JSON.parse(result.body)).toEqual({
       itemIDs: [
         { id: "itemID-1", processingStatus: ProcessingStatus.IN_PROGRESS },
-        { id: "itemID-2", processingStatus: ProcessingStatus.FAILED },
+        { id: "itemID-2", processingStatus: ProcessingStatus.IMAGE_FAILED },
       ],
     });
 

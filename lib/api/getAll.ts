@@ -9,7 +9,7 @@ import { getTableName, requestFailed } from "../processing";
 import { ProcessingStatus } from "../processing";
 
 const dynamoDb = new DynamoDB();
-interface projectionResult {
+export interface ProjectionResult {
   id: string;
   processingStatus: ProcessingStatus;
 }
@@ -38,7 +38,7 @@ async function handler(
     }
 
     // Extract itemIDs from the query result or default to an empty array
-    const itemIDs: projectionResult[] =
+    const itemIDs: ProjectionResult[] =
       queryResult.Items?.map((item) => ({
         id: item.itemID!.S!,
         processingStatus: item.processingStatus!.S! as ProcessingStatus,

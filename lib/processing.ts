@@ -20,8 +20,15 @@ export function getImageKey(prefix: string) {
 }
 export enum ProcessingStatus {
   IN_PROGRESS = "in progress",
-  FAILED = "failed",
+  TRANSCRIPTION_FAILED = "audio transcription failed",
+  IMAGE_FAILED = "image generation failed",
   FINISHED = "finished",
+}
+export function transcriptionHasNotBeenCreated(status: ProcessingStatus) {
+  return (
+    status !== ProcessingStatus.IMAGE_FAILED &&
+    status !== ProcessingStatus.FINISHED
+  );
 }
 // Schema definition with strongly typed attributes
 export interface DynamoDBTableSchema {

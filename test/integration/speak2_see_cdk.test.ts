@@ -10,6 +10,7 @@ import * as dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { ProcessingStatus } from "../../lib/processing";
+import { ProjectionResult } from "../../lib/api/getAll";
 
 dotenv.config({
   path: join(__dirname, ".env"),
@@ -98,47 +99,95 @@ describe("Integration Test: Speak2See REST API", () => {
     console.log(`Uploaded audio file. Received ID: ${response.data.id}`);
   }, 10000); // run up to 10 seconds
 
-  /*   test("GET /getAll: Retrieve all itemIDs", async () => {
+  test("GET /getAll: Retrieve all itemIDs with processingStatus", async () => {
     const response = await axios.get(`${apiEndpoint}getAll`, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
     });
 
+    // Assertions
     expect(response.status).toBe(200);
     expect(response.data).toHaveProperty("itemIDs");
     expect(response.data.itemIDs).toBeInstanceOf(Array);
-    expect(response.data.itemIDs.length).toBeGreaterThan(0);
-    console.log(`Retrieved itemIDs: ${response.data.itemIDs}`);
+
+    // Ensure the array contains at least one valid item with expected properties
+    const itemIDs = response.data.itemIDs;
+    expect(itemIDs.length).toBeGreaterThan(0);
+    itemIDs.forEach((item: { id: string; processingStatus: string }) => {
+      expect(item).toHaveProperty("id");
+      expect(item).toHaveProperty("processingStatus");
+      expect(typeof item.id).toBe("string");
+      expect(Object.values(ProcessingStatus)).toContain(item.processingStatus);
+    });
+
+    console.log(`Retrieved items: ${JSON.stringify(itemIDs)}`);
   });
 
-  test("GET /get/{itemID}: Retrieve audio blob and processingStatus", async () => {
+  test("GET /get/{itemID}: Verify responses for finished and unfinished items", async () => {
+    // Step 1: Retrieve all itemIDs using /getAll
     const getAllResponse = await axios.get(`${apiEndpoint}getAll`, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
     });
 
-    const itemIDs = getAllResponse.data.itemIDs;
-    expect(itemIDs.length).toBeGreaterThan(0);
+    // Assertions for /getAll
+    const itemIDs: ProjectionResult[] = getAllResponse.data.itemIDs;
+    expect(itemIDs.length).toBeGreaterThan(1);
 
-    const item = itemIDs[0];
-    expect(item).toHaveProperty("id");
-    expect(item.processingStatus).toBe(ProcessingStatus.IN_PROGRESS);
-    const itemID: string = item.id!;
-    console.log(`Using itemID for /get: ${itemID}`);
-
-    const getResponse = await axios.get(`${apiEndpoint}get/${itemID}`, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    expect(getResponse.status).toBe(200);
-    expect(getResponse.data).toHaveProperty("audio");
-    expect(getResponse.data.processingStatus).toBe(
-      ProcessingStatus.IN_PROGRESS
+    // Find items with finished and not finished statuses
+    const finishedItem = itemIDs.find(
+      (item) => item.processingStatus === ProcessingStatus.FINISHED
     );
-    console.log("Retrieved audio blob and processingStatus: 'in progress'.");
-  }); */
+    const unfinishedItem = itemIDs.find(
+      (item) =>
+        item.processingStatus &&
+        item.processingStatus !== ProcessingStatus.FINISHED
+    );
+
+    // Step 2: Verify the finished item
+    expect(finishedItem).toBeDefined();
+    const finishedResponse = await axios.get(
+      `${apiEndpoint}get/${finishedItem!.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      }
+    );
+
+    expect(finishedResponse.status).toBe(200);
+    expect(finishedResponse.data).toHaveProperty("audio");
+    expect(finishedResponse.data).toHaveProperty("image");
+    expect(finishedResponse.data).toHaveProperty("transcription");
+    expect(finishedResponse.data).toHaveProperty("prompt");
+    expect(finishedResponse.data.processingStatus).toBe(
+      ProcessingStatus.FINISHED
+    );
+
+    // Ensure fields are truthy (not empty strings)
+    expect(finishedResponse.data.audio).toBeTruthy();
+    expect(finishedResponse.data.image).toBeTruthy();
+    expect(finishedResponse.data.transcription).toBeTruthy();
+    expect(finishedResponse.data.prompt).toBeTruthy();
+
+    // Step 3: Verify the unfinished item
+    expect(unfinishedItem).toBeDefined();
+    const unfinishedResponse = await axios.get(
+      `${apiEndpoint}get/${unfinishedItem!.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      }
+    );
+
+    expect(unfinishedResponse.status).toBe(200);
+    expect(unfinishedResponse.data).toHaveProperty("audio");
+    expect(unfinishedResponse.data.processingStatus).not.toBe(
+      ProcessingStatus.FINISHED
+    );
+    expect(unfinishedResponse.data.audio).toBeTruthy();
+  }, 10000);
 });

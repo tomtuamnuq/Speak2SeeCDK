@@ -6,7 +6,12 @@ import {
   Context,
 } from "aws-lambda";
 import { createAPIGatewayResult, getEnvironment } from "./common";
-import { getAudioKey, getImageKey, ProcessingStatus } from "../processing";
+import {
+  getAudioKey,
+  getImageKey,
+  ProcessingStatus,
+  transcriptionHasNotBeenCreated,
+} from "../processing";
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();
@@ -47,29 +52,7 @@ async function handler(
     const item = getItemResult.Item;
     const audioBlob = await getS3Blob(bucketName, getAudioKey(itemID));
     const processingStatus = item.processingStatus.S! as ProcessingStatus;
-    // If processingStatus is 'finished', fetch additional data
-    if (processingStatus === ProcessingStatus.FINISHED) {
-      const imageBlob = await getS3Blob(bucketName, getImageKey(itemID));
-      const transcription = item.transcription?.S;
-      if (!transcription) {
-        throw new Error("Missing transcription for finished audio processing!");
-      }
-      const prompt = item.prompt?.S;
-      if (!prompt) {
-        throw new Error("Missing prompt for finished audio processing!");
-      }
-      return createAPIGatewayResult(
-        200,
-        JSON.stringify({
-          audio: audioBlob,
-          image: imageBlob,
-          transcription: transcription,
-          prompt: prompt,
-          processingStatus: processingStatus,
-        })
-      );
-    } else {
-      // If processingStatus is not 'finished', return the audio file only!
+    if (transcriptionHasNotBeenCreated(processingStatus)) {
       return createAPIGatewayResult(
         200,
         JSON.stringify({
@@ -78,6 +61,29 @@ async function handler(
         })
       );
     }
+    const transcription = item.transcription?.S;
+    if (!transcription) {
+      throw new Error("Missing transcription for finished audio processing!");
+    }
+    const prompt = item.prompt?.S;
+    if (!prompt) {
+      throw new Error("Missing prompt for finished audio processing!");
+    }
+    let imageBlob = "";
+    // If processingStatus is 'finished', fetch additional data
+    if (processingStatus === ProcessingStatus.FINISHED) {
+      imageBlob = await getS3Blob(bucketName, getImageKey(itemID));
+    }
+    return createAPIGatewayResult(
+      200,
+      JSON.stringify({
+        audio: audioBlob,
+        image: imageBlob,
+        transcription: transcription,
+        prompt: prompt,
+        processingStatus: processingStatus,
+      })
+    );
   } catch (error) {
     console.error("Error processing request:", error);
     return createAPIGatewayResult(
