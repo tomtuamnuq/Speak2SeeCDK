@@ -7,6 +7,7 @@ import {
   DefinitionBody,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { TranscribeWorkflow } from "../../../lib/workflow/transcribe";
+import { prettyPrintTemplate } from "../utils";
 
 describe("TranscribeWorkflow", () => {
   const bucketName = "test-bucket";
@@ -46,7 +47,7 @@ describe("TranscribeWorkflow", () => {
     });
 
     const template = Template.fromStack(stack);
-    console.log("Template:", JSON.stringify(template.toJSON(), null, 2));
+    prettyPrintTemplate(template);
     // TODO check that prefix gets passed to both transcriptionCompleted and transcriptionFailed
   });
 });

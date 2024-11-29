@@ -20,6 +20,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { join } from "path";
 import { LambdaInvoke } from "aws-cdk-lib/aws-stepfunctions-tasks";
+import { Text2Image } from "./workflow/bedrock";
 interface Speak2SeeProps extends StackProps {
   bucket: IBucket;
   table: ITable;
@@ -30,6 +31,11 @@ export class Speak2SeeCdkStack extends Stack {
   constructor(scope: Construct, id: string, props: Speak2SeeProps) {
     super(scope, id, props);
     const bucketName = props.bucket.bucketName;
+    const text2Image = new Text2Image(this, "Text2Image", {
+      bucketName: bucketName,
+      prefix: JsonPath.stringAt("$.prefix"),
+      prompt: JsonPath.stringAt("$.transcription.prompt"),
+    });
 
     // Define the Lambda task to process transcription
     const processingLambda = new NodejsFunction(this, "ComprehendFunction", {
@@ -47,7 +53,7 @@ export class Speak2SeeCdkStack extends Stack {
       {
         lambdaFunction: processingLambda,
         payload: TaskInput.fromObject(processingLambdaInput),
-        resultPath: "$.input.transcription",
+        resultPath: "$.input.transcription", // injects transcription.prompt
         resultSelector: {
           "text.$": "$.Payload.transcription",
           "prompt.$": "$.Payload.prompt",
@@ -55,6 +61,8 @@ export class Speak2SeeCdkStack extends Stack {
         outputPath: "$.input", // this moves nested input.prefix and input.userID to the top-level
       }
     );
+    // Define the Image Generation workflow
+    processTranscriptionTask.next(text2Image.task);
 
     // Define the Amazon Transcribe Workflow
     const transcribeWorkflow = new TranscribeWorkflow(
@@ -77,7 +85,8 @@ export class Speak2SeeCdkStack extends Stack {
     const stateMachineRole = this.createStateMachineRole(
       props.bucket,
       transcribeWorkflow,
-      processingLambda
+      processingLambda,
+      text2Image
     );
 
     this.stateMachine = new StateMachine(this, "TestStateMachine", {
@@ -94,7 +103,8 @@ export class Speak2SeeCdkStack extends Stack {
   private createStateMachineRole(
     bucket: IBucket,
     transcribeWorkflow: TranscribeWorkflow,
-    processingLambda: NodejsFunction
+    processingLambda: NodejsFunction,
+    text2Image: Text2Image
   ): Role {
     const stateMachineRole = new Role(this, "StateMachineRole", {
       assumedBy: new ServicePrincipal("states.amazonaws.com"),
@@ -102,6 +112,7 @@ export class Speak2SeeCdkStack extends Stack {
 
     // Grant the State Machine permissions to read/write from the S3 bucket
     bucket.grantReadWrite(stateMachineRole);
+
     transcribeWorkflow.addPermissions(stateMachineRole);
 
     // Grant the State Machine permissions to invoke Lambda functions
@@ -119,6 +130,8 @@ export class Speak2SeeCdkStack extends Stack {
         resources: [`${bucket.bucketArn}/*`], // Restrict to the bucket
       })
     );
+
+    text2Image.addPermissions(stateMachineRole);
 
     return stateMachineRole;
   }
