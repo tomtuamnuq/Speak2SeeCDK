@@ -4,7 +4,8 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import { createAPIGatewayResult, getTableName, getUserID } from "./common";
+import { createAPIGatewayResult, getUserID } from "./common";
+import { getTableName, requestFailed } from "../processing";
 import { ProcessingStatus } from "../processing";
 
 const dynamoDb = new DynamoDB();
@@ -31,7 +32,7 @@ async function handler(
     });
 
     // Check query result metadata
-    if (!queryResult || queryResult.$metadata.httpStatusCode !== 200) {
+    if (requestFailed(queryResult)) {
       console.error("Failed to query DynamoDB", queryResult);
       throw new Error("Failed to query DynamoDB");
     }

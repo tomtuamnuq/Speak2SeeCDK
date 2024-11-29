@@ -2,6 +2,7 @@ import { GetObjectCommandInput, S3 } from "@aws-sdk/client-s3";
 import { Comprehend } from "@aws-sdk/client-comprehend";
 import { Context } from "aws-lambda";
 import {
+  getBucketName,
   MAXIMUM_NUMBER_OF_KEY_PHRASES,
   ProcessingLambdaInput,
   ProcessingLambdaOutput,
@@ -23,19 +24,11 @@ export const handler = async (
   event: ProcessingLambdaInput,
   context: Context
 ): Promise<ProcessingLambdaOutput> => {
-  const { bucketName, prefix } = event;
-  try {
-    if (!bucketName) {
-      throw new Error("Bucket name not specified in input.");
-    }
-
-    if (!prefix) {
-      throw new Error("UUID prefix (directoryName) not specified in input.");
-    }
-  } catch (error) {
-    console.error("Missing required input: ", error);
-    throw error;
+  const { prefix } = event;
+  if (!prefix) {
+    throw new Error("UUID prefix (directoryName) not specified in input.");
   }
+  const bucketName = getBucketName();
   let transcriptText: string;
   try {
     transcriptText = await getTranscriptionFromS3(bucketName, prefix);

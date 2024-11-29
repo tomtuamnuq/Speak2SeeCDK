@@ -35,7 +35,7 @@ async function handler(
       },
     });
 
-    if (!getItemResult || !getItemResult.Item) {
+    if (!getItemResult.Item) {
       return createAPIGatewayResult(
         404,
         JSON.stringify({

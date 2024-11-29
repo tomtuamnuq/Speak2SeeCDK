@@ -1,3 +1,5 @@
+import { __MetadataBearer } from "@aws-sdk/client-s3";
+
 export const AUDIO_FILENAME = "audio.wav";
 export const AUDIO_MEDIA_FORMAT = "wav";
 export const IMAGE_FILENAME = "image.jpg";
@@ -33,10 +35,42 @@ export interface DynamoDBTableSchema {
 }
 
 export interface ProcessingLambdaInput {
-  bucketName: string;
   prefix: string;
 }
 export interface ProcessingLambdaOutput {
   transcription: string;
   prompt: string;
+}
+
+export interface FinalLambdaInput {
+  prefix: string;
+  userID: string;
+  transcription: string;
+  prompt: string;
+}
+/**
+ * Retrieves the S3 bucket name from environment variables.
+ * @throws Error if BUCKET_NAME is not defined.
+ */
+export function getBucketName(): string {
+  const bucketName = process.env.BUCKET_NAME;
+  if (!bucketName) {
+    throw new Error("Bucket name not specified in environment variables.");
+  }
+  return bucketName;
+}
+/**
+ * Retrieves the DynamoDB table name from environment variables.
+ * @throws Error if TABLE_NAME is not defined.
+ */
+export function getTableName(): string {
+  const tableName = process.env.TABLE_NAME;
+  if (!tableName) {
+    throw new Error("Table name not specified in environment variables.");
+  }
+  return tableName;
+}
+
+export function requestFailed(response: __MetadataBearer) {
+  return response.$metadata.httpStatusCode !== 200;
 }

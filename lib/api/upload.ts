@@ -16,6 +16,7 @@ import {
   DynamoDBTableSchema,
   getAudioKey,
   ProcessingStatus,
+  requestFailed,
 } from "../processing";
 import { SFN } from "@aws-sdk/client-sfn";
 
@@ -55,7 +56,7 @@ async function handler(
       ContentType: "audio/wav",
     });
 
-    if (!putObjectResult || putObjectResult.$metadata.httpStatusCode !== 200) {
+    if (requestFailed(putObjectResult)) {
       console.error("Failed to upload audio to S3", putObjectResult);
       throw new Error("Failed to upload audio file to S3");
     }
@@ -101,7 +102,7 @@ async function handler(
       },
     });
 
-    if (!putItemResult || putItemResult.$metadata.httpStatusCode !== 200) {
+    if (requestFailed(putItemResult)) {
       console.error("Failed to create DynamoDB item", putItemResult);
       throw new Error("Failed to create DynamoDB item");
     }

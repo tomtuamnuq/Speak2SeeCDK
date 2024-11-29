@@ -15,7 +15,11 @@ import {
   TaskInput,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LogGroup } from "aws-cdk-lib/aws-logs";
-import { ProcessingLambdaInput, WORKFLOW_TIMEOUT_DURATION } from "./processing";
+import {
+  FinalLambdaInput,
+  ProcessingLambdaInput,
+  WORKFLOW_TIMEOUT_DURATION,
+} from "./processing";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { join } from "path";
@@ -31,20 +35,44 @@ export class Speak2SeeCdkStack extends Stack {
   constructor(scope: Construct, id: string, props: Speak2SeeProps) {
     super(scope, id, props);
     const bucketName = props.bucket.bucketName;
+    const tableName = props.table.tableName;
+
     const text2Image = new Text2Image(this, "Text2Image", {
       bucketName: bucketName,
       prefix: JsonPath.stringAt("$.prefix"),
       prompt: JsonPath.stringAt("$.transcription.prompt"),
     });
-
+    // Define the Lambda task to save the final image as jpeg
+    const finalLambda = new NodejsFunction(this, "FinalFunction", {
+      runtime: Runtime.NODEJS_20_X,
+      handler: "handler",
+      entry: join(__dirname, "workflow", "finalize.ts"),
+      environment: {
+        BUCKET_NAME: bucketName,
+        TABLE_NAME: tableName,
+      },
+    });
+    const finalLambdaInput: FinalLambdaInput = {
+      prefix: JsonPath.stringAt("$.prefix"),
+      userID: JsonPath.stringAt("$.userID"),
+      transcription: JsonPath.stringAt("$.transcription.text"),
+      prompt: JsonPath.stringAt("$.transcription.prompt"),
+    };
+    const finalTask = new LambdaInvoke(this, "FinalTask", {
+      lambdaFunction: finalLambda,
+      payload: TaskInput.fromObject(finalLambdaInput),
+      resultPath: JsonPath.DISCARD, // returns void
+    });
     // Define the Lambda task to process transcription
     const processingLambda = new NodejsFunction(this, "ComprehendFunction", {
       runtime: Runtime.NODEJS_20_X,
       handler: "handler",
       entry: join(__dirname, "workflow", "comprehend.ts"),
+      environment: {
+        BUCKET_NAME: bucketName,
+      },
     });
     const processingLambdaInput: ProcessingLambdaInput = {
-      bucketName: bucketName,
       prefix: JsonPath.stringAt("$.input.prefix"),
     };
     const processTranscriptionTask = new LambdaInvoke(
@@ -62,7 +90,7 @@ export class Speak2SeeCdkStack extends Stack {
       }
     );
     // Define the Image Generation workflow
-    processTranscriptionTask.next(text2Image.task);
+    processTranscriptionTask.next(text2Image.task).next(finalTask);
 
     // Define the Amazon Transcribe Workflow
     const transcribeWorkflow = new TranscribeWorkflow(
@@ -84,9 +112,11 @@ export class Speak2SeeCdkStack extends Stack {
 
     const stateMachineRole = this.createStateMachineRole(
       props.bucket,
+      props.table,
       transcribeWorkflow,
       processingLambda,
-      text2Image
+      text2Image,
+      finalLambda
     );
 
     this.stateMachine = new StateMachine(this, "TestStateMachine", {
@@ -102,9 +132,11 @@ export class Speak2SeeCdkStack extends Stack {
 
   private createStateMachineRole(
     bucket: IBucket,
+    table: ITable,
     transcribeWorkflow: TranscribeWorkflow,
     processingLambda: NodejsFunction,
-    text2Image: Text2Image
+    text2Image: Text2Image,
+    finalLambda: NodejsFunction
   ): Role {
     const stateMachineRole = new Role(this, "StateMachineRole", {
       assumedBy: new ServicePrincipal("states.amazonaws.com"),
@@ -114,9 +146,6 @@ export class Speak2SeeCdkStack extends Stack {
     bucket.grantReadWrite(stateMachineRole);
 
     transcribeWorkflow.addPermissions(stateMachineRole);
-
-    // Grant the State Machine permissions to invoke Lambda functions
-    processingLambda.grantInvoke(stateMachineRole);
     // Grant the text processing Lambda function permissions
     processingLambda.addToRolePolicy(
       new PolicyStatement({
@@ -133,6 +162,23 @@ export class Speak2SeeCdkStack extends Stack {
 
     text2Image.addPermissions(stateMachineRole);
 
+    // Grant the final Lambda function permissions
+    finalLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["s3:GetObject", "s3:PutObject"], // Only allow GetObject and PutObject
+        resources: [`${bucket.bucketArn}/*`], // Restrict to the bucket
+      })
+    );
+    finalLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["dynamodb:UpdateItem"], // Only allow UpdateItem
+        resources: [table.tableArn], // Restrict to the DynamoDB table
+      })
+    );
+
+    // Grant the State Machine permissions to invoke Lambda functions
+    processingLambda.grantInvoke(stateMachineRole);
+    finalLambda.grantInvoke(stateMachineRole);
     return stateMachineRole;
   }
 }

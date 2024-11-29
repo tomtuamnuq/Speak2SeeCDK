@@ -26,13 +26,13 @@ describe("Processing Lambda Function", () => {
   });
 
   const event: ProcessingLambdaInput = {
-    bucketName,
     prefix,
   };
 
   beforeEach(() => {
     s3Mock.reset();
     comprehendMock.reset();
+    process.env.BUCKET_NAME = bucketName;
   });
 
   test("returns transcription and key phrases successfully", async () => {
