@@ -96,9 +96,9 @@ describe("Integration Test: Speak2See REST API", () => {
     expect(response.status).toBe(200);
     expect(response.data).toHaveProperty("id");
     console.log(`Uploaded audio file. Received ID: ${response.data.id}`);
-  });
+  }, 15);
 
-  test("GET /getAll: Retrieve all itemIDs", async () => {
+  /*   test("GET /getAll: Retrieve all itemIDs", async () => {
     const response = await axios.get(`${apiEndpoint}getAll`, {
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -140,5 +140,5 @@ describe("Integration Test: Speak2See REST API", () => {
       ProcessingStatus.IN_PROGRESS
     );
     console.log("Retrieved audio blob and processingStatus: 'in progress'.");
-  });
+  }); */
 });

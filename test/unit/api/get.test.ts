@@ -3,22 +3,12 @@ import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/get";
 import { getAudioKey, getImageKey } from "../../../lib/processing";
-import { sdkStreamMixin } from "@smithy/util-stream";
-import { Readable } from "stream";
+import { encodeBase64, mockS3BodyStream } from "../utils";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);
 const dynamoDbMock = mockClient(DynamoDBClient);
 
-function mockS3BodyStream(body: string) {
-  const stream = new Readable();
-  stream.push(body);
-  stream.push(null);
-  return sdkStreamMixin(stream);
-}
-function encodeBase64(body: string) {
-  return Buffer.from(body).toString("base64");
-}
 describe("Get Lambda Function", () => {
   const bucketName = "test-bucket";
   const tableName = "test-table";
