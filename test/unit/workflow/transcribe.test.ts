@@ -10,7 +10,7 @@ import { TranscribeWorkflow } from "../../../lib/workflow/transcribe";
 
 describe("TranscribeWorkflow", () => {
   const bucketName = "test-bucket";
-  const directoryName = JsonPath.stringAt("$.directoryName");
+  const prefix = JsonPath.stringAt("$.input.prefix");
 
   let app: App;
   let stack: Stack;
@@ -21,16 +21,18 @@ describe("TranscribeWorkflow", () => {
   });
 
   test("Check that TranscribeWorkflow can be chained.", () => {
-    // Define a Pass state to inject directoryName into the state machine
+    // Define a Pass state to inject prefix into the state machine
     const injectParameters = new Pass(stack, "InjectParameters", {
       parameters: {
-        directoryName: directoryName,
+        input: {
+          prefix: "mock-prefix",
+        },
       },
     });
     // Chain the states
     const workflow = new TranscribeWorkflow(stack, "TestTranscribeWorkflow", {
       bucketName,
-      directoryName,
+      prefix: prefix,
       transcriptionCompleted: new Pass(stack, "WorkflowCompleted", {
         resultPath: JsonPath.DISCARD,
       }),
@@ -45,6 +47,6 @@ describe("TranscribeWorkflow", () => {
 
     const template = Template.fromStack(stack);
     console.log("Template:", JSON.stringify(template.toJSON(), null, 2));
-    // TODO check that directoryName gets passed to both transcriptionCompleted and transcriptionFailed
+    // TODO check that prefix gets passed to both transcriptionCompleted and transcriptionFailed
   });
 });

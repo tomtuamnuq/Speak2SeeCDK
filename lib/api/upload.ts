@@ -61,11 +61,15 @@ async function handler(
     }
 
     // Start the Step Function workflow
+    const input = {
+      userID: userID,
+      prefix: prefix,
+    };
     const startWorkflowResult = await sfn.startExecution({
       stateMachineArn: stateMachineArn,
       name: prefix,
       input: JSON.stringify({
-        directoryName: prefix,
+        input,
       }),
     });
     if (!startWorkflowResult.startDate || !startWorkflowResult.executionArn) {

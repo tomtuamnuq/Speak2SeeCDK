@@ -23,7 +23,7 @@ import { PolicyStatement, Role } from "aws-cdk-lib/aws-iam";
 
 export interface TranscribeWorkflowProps {
   bucketName: string;
-  directoryName: string;
+  prefix: string;
   transcriptionCompleted: INextable & IChainable;
   transcriptionFailed: INextable & IChainable;
 }
@@ -35,12 +35,8 @@ export class TranscribeWorkflow extends StateMachineFragment {
   constructor(scope: Construct, id: string, props: TranscribeWorkflowProps) {
     super(scope, id);
 
-    const {
-      bucketName,
-      directoryName,
-      transcriptionCompleted,
-      transcriptionFailed,
-    } = props;
+    const { bucketName, prefix, transcriptionCompleted, transcriptionFailed } =
+      props;
 
     // Task: Start Transcription Job
     const startTranscriptionTask = new CallAwsService(
@@ -50,21 +46,21 @@ export class TranscribeWorkflow extends StateMachineFragment {
         service: "transcribe",
         action: "startTranscriptionJob",
         parameters: {
-          TranscriptionJobName: directoryName,
+          TranscriptionJobName: prefix,
           LanguageCode: SPOKEN_LANGUAGE_CODE,
           MediaFormat: AUDIO_MEDIA_FORMAT,
           Media: {
             MediaFileUri: JsonPath.format(
               "s3://{}/{}/{}",
               bucketName,
-              directoryName,
+              prefix,
               AUDIO_FILENAME
             ),
           },
           OutputBucketName: bucketName,
           OutputKey: JsonPath.format(
             "{}/{}",
-            directoryName,
+            prefix,
             TRANSCRIPTION_RESULT_FILENAME
           ),
         },
@@ -83,7 +79,7 @@ export class TranscribeWorkflow extends StateMachineFragment {
       service: "transcribe",
       action: "getTranscriptionJob",
       parameters: {
-        TranscriptionJobName: directoryName,
+        TranscriptionJobName: prefix,
       },
       resultPath: "$.transcriptionStatus",
       iamResources: ["*"], // TODO Restrict to specific resources if needed

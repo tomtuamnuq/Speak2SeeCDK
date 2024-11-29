@@ -30,7 +30,7 @@ export const handler = async (
     }
 
     if (!prefix) {
-      throw new Error("UUID (directoryName) not specified in input.");
+      throw new Error("UUID prefix (directoryName) not specified in input.");
     }
   } catch (error) {
     console.error("Missing required input: ", error);

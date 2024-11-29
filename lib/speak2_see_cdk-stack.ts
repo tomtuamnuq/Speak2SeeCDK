@@ -30,7 +30,6 @@ export class Speak2SeeCdkStack extends Stack {
   constructor(scope: Construct, id: string, props: Speak2SeeProps) {
     super(scope, id, props);
     const bucketName = props.bucket.bucketName;
-    const directoryName = JsonPath.stringAt("$.directoryName");
 
     // Define the Lambda task to process transcription
     const processingLambda = new NodejsFunction(this, "ComprehendFunction", {
@@ -40,7 +39,7 @@ export class Speak2SeeCdkStack extends Stack {
     });
     const processingLambdaInput: ProcessingLambdaInput = {
       bucketName: bucketName,
-      prefix: directoryName,
+      prefix: JsonPath.stringAt("$.input.prefix"),
     };
     const processTranscriptionTask = new LambdaInvoke(
       this,
@@ -48,8 +47,12 @@ export class Speak2SeeCdkStack extends Stack {
       {
         lambdaFunction: processingLambda,
         payload: TaskInput.fromObject(processingLambdaInput),
-        resultPath: "$.processResult", // returns ProcessingLambdaOutput
-        resultSelector: { "processResult.$": "$.Payload" },
+        resultPath: "$.input.transcription",
+        resultSelector: {
+          "text.$": "$.Payload.transcription",
+          "prompt.$": "$.Payload.prompt",
+        },
+        outputPath: "$.input", // this moves nested input.prefix and input.userID to the top-level
       }
     );
 
@@ -59,7 +62,7 @@ export class Speak2SeeCdkStack extends Stack {
       "TranscribeWorkflow",
       {
         bucketName: bucketName,
-        directoryName: directoryName,
+        prefix: JsonPath.stringAt("$.input.prefix"),
         transcriptionCompleted: processTranscriptionTask,
         transcriptionFailed: new Pass(this, "TranscriptionWorkflowFailed", {
           resultPath: JsonPath.DISCARD,
