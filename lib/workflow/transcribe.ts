@@ -28,10 +28,21 @@ export interface TranscribeWorkflowProps {
   transcriptionFailed: INextable & IChainable;
 }
 
+/**
+ * A Step Function workflow for transcribing audio files using Amazon Transcribe.
+ * - Initiates a transcription job for an audio file stored in S3.
+ * - Polls the transcription job status at regular intervals.
+ * - Branches to success or failure based on the transcription job's status.
+ */
 export class TranscribeWorkflow extends StateMachineFragment {
   public readonly startState: State;
   public readonly endStates: INextable[];
-
+  /**
+   * Constructs a new TranscribeWorkflow.
+   * @param scope - The Construct scope.
+   * @param id - The unique identifier for this workflow.
+   * @param props - Workflow properties including S3 bucket, prefix, and transitions.
+   */
   constructor(scope: Construct, id: string, props: TranscribeWorkflowProps) {
     super(scope, id);
 
@@ -65,7 +76,7 @@ export class TranscribeWorkflow extends StateMachineFragment {
           ),
         },
         resultPath: "$.transcriptionJob",
-        iamResources: ["*"], // TODO Restrict to specific resources if needed
+        iamResources: ["*"], // TODO Restrict to specific resources in production
       }
     );
 
@@ -82,7 +93,7 @@ export class TranscribeWorkflow extends StateMachineFragment {
         TranscriptionJobName: prefix,
       },
       resultPath: "$.transcriptionStatus",
-      iamResources: ["*"], // TODO Restrict to specific resources if needed
+      iamResources: ["*"], // TODO Restrict to specific resources in production
     });
 
     // Choice: Is Transcription Complete?
@@ -112,8 +123,11 @@ export class TranscribeWorkflow extends StateMachineFragment {
     this.endStates = [transcriptionCompleted, transcriptionFailed];
   }
 
+  /**
+   * Adds permissions to the provided IAM role for accessing Amazon Transcribe.
+   * @param role - The IAM role to grant permissions.
+   */
   public addPermissions(role: Role) {
-    // Grant the Role permissions to use Amazon Transcribe
     role.addToPolicy(
       new PolicyStatement({
         actions: [
@@ -121,7 +135,7 @@ export class TranscribeWorkflow extends StateMachineFragment {
           "transcribe:GetTranscriptionJob",
           "transcribe:DeleteTranscriptionJob",
         ],
-        resources: ["*"], // TODO restrict this to specific resources
+        resources: ["*"], // TODO restrict to specific resources in production
       })
     );
   }

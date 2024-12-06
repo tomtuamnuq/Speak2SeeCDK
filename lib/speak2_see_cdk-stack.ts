@@ -1,3 +1,7 @@
+/**
+ * Defines the `Speak2SeeCdkStack`, which orchestrates the state machine for audio-to-image processing.
+ * The stack includes workflows for transcription, text-to-image generation, and DynamoDB integration.
+ */
 import { Duration, Stack, StackProps } from "aws-cdk-lib";
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
@@ -6,11 +10,9 @@ import { Construct } from "constructs";
 import { TranscribeWorkflow } from "./workflow/transcribe";
 import {
   DefinitionBody,
-  Fail,
   IStateMachine,
   JsonPath,
   LogLevel,
-  Pass,
   StateMachine,
   TaskInput,
 } from "aws-cdk-lib/aws-stepfunctions";
@@ -30,9 +32,10 @@ import {
   LambdaInvoke,
 } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Text2Image } from "./workflow/bedrock";
+
 interface Speak2SeeProps extends StackProps {
-  bucket: IBucket;
-  table: ITable;
+  bucket: IBucket; // S3 bucket used for storing audio, transcriptions, and images.
+  table: ITable; // DynamoDB table used for tracking processing status and metadata.
 }
 
 export class Speak2SeeCdkStack extends Stack {
@@ -190,7 +193,16 @@ export class Speak2SeeCdkStack extends Stack {
       },
     });
   }
-
+  /**
+   * Creates an IAM Role for the State Machine, granting permissions for S3, DynamoDB, and Lambda integrations.
+   * @param bucket - S3 bucket used in the workflow.
+   * @param table - DynamoDB table used for processing state tracking.
+   * @param transcribeWorkflow - The transcription workflow instance.
+   * @param processingLambda - Lambda function for transcription processing.
+   * @param text2Image - The text-to-image generation workflow instance.
+   * @param finalLambda - Lambda function for final processing.
+   * @returns The configured IAM Role.
+   */
   private createStateMachineRole(
     bucket: IBucket,
     table: ITable,

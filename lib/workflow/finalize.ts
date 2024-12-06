@@ -13,6 +13,14 @@ import { DynamoDB } from "@aws-sdk/client-dynamodb";
 const s3 = new S3();
 const dynamoDb = new DynamoDB();
 
+/**
+ * AWS Lambda handler for finalizing the processing workflow.
+ * - Retrieves the generated image from S3 and uploads it to a separate S3 location.
+ * - Updates the DynamoDB entry with the transcription, prompt, and processing status.
+ * @param event - Input event containing the prefix, userID, transcription, and prompt.
+ * @param context - The AWS Lambda context.
+ * @throws Error if required inputs are missing or if S3/DynamoDB operations fail.
+ */
 export const handler = async (
   event: FinalLambdaInput,
   context: Context
@@ -84,7 +92,13 @@ export const handler = async (
   }
 };
 
-// Helper function to convert S3 stream to the base64 encoded image
+/**
+ * Helper function to retrieve and parse an image JSON file from S3.
+ * - Converts the base64-encoded image to a Buffer.
+ * @param params - Parameters for the GetObject S3 command.
+ * @returns A Buffer containing the image data.
+ * @throws Error if the image JSON file is missing or contains no images.
+ */
 async function getImageFromS3Json(
   params: GetObjectCommandInput
 ): Promise<Buffer> {

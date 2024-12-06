@@ -15,7 +15,12 @@ import {
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();
-
+/**
+ * Handles requests to retrieve processing results by item ID.
+ * @param event - The API Gateway event containing the request details.
+ * @param context - The Lambda execution context.
+ * @returns An API Gateway response with the requested data or an error message.
+ */
 async function handler(
   event: APIGatewayProxyEvent,
   context: Context
@@ -92,8 +97,14 @@ async function handler(
     );
   }
 }
+/**
+ * Fetches a base64-encoded blob from S3 for the given bucket and key.
+ * @param bucketName - The name of the S3 bucket.
+ * @param key - The key of the object in the S3 bucket.
+ * @returns A base64-encoded string representing the blob.
+ * @throws Error if the object is missing or cannot be retrieved.
+ */
 async function getS3Blob(bucketName: string, key: string): Promise<string> {
-  // Get the audio blob from S3
   const getObjectResponse = await s3.getObject({
     Bucket: bucketName,
     Key: key,

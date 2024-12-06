@@ -24,6 +24,12 @@ const s3 = new S3();
 const sfn = new SFN();
 const dynamoDb = new DynamoDB();
 
+/**
+ * Lambda function to handle file uploads, start a Step Function workflow, and create a DynamoDB entry.
+ * @param event - The API Gateway event containing the upload request and audio file data.
+ * @param context - The Lambda execution context.
+ * @returns An API Gateway response with the created item details or an error message.
+ */
 async function handler(
   event: APIGatewayProxyEvent,
   context: Context

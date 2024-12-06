@@ -20,6 +20,14 @@ const s3 = new S3();
 const comprehend = new Comprehend();
 const MAXIMUM_NUMBER_OF_CHARACTERS = 256; // limit the resulting string
 
+/**
+ * AWS Lambda handler for processing transcription results with Amazon Comprehend.
+ * Extracts key phrases from a transcription stored in S3 and generates a prompt string.
+ * @param event - The input event containing the prefix of the transcription.
+ * @param context - The AWS Lambda context.
+ * @returns An object containing the transcription text and a generated prompt.
+ * @throws Error if required inputs are missing or if processing fails.
+ */
 export const handler = async (
   event: ProcessingLambdaInput,
   context: Context
@@ -61,6 +69,13 @@ export const handler = async (
   return { transcription: transcriptText, prompt: concatenatedKeyPhrases };
 };
 
+/**
+ * Retrieves the transcription text from S3 for the given prefix.
+ * @param bucketName - The name of the S3 bucket.
+ * @param prefix - The prefix used to locate the transcription file.
+ * @returns The transcription text.
+ * @throws Error if the transcription file or text is missing.
+ */
 async function getTranscriptionFromS3(bucketName: string, prefix: string) {
   const transcriptKey = `${prefix}/${TRANSCRIPTION_RESULT_FILENAME}`;
 
@@ -82,7 +97,11 @@ async function getTranscriptionFromS3(bucketName: string, prefix: string) {
   return transcriptText;
 }
 
-// Helper function to convert S3 stream to the expected JSON
+/**
+ * Fetches an object from S3 and parses it as JSON.
+ * @param params - Parameters for the GetObject S3 command.
+ * @returns The parsed JSON object or undefined if the object is missing.
+ */
 async function getObjectS3(
   params: GetObjectCommandInput
 ): Promise<TranscribeResult | undefined> {
@@ -93,6 +112,13 @@ async function getObjectS3(
     : transcribeResult;
 }
 
+/**
+ * Detects unique key phrases from transcription text using Amazon Comprehend.
+ * Filters and sorts key phrases by confidence score in descending order.
+ * @param transcriptText - The transcription text.
+ * @returns A set of unique key phrases sorted by confidence score.
+ * @throws Error if no valid key phrases are found.
+ */
 async function detectUniqueKeyPhrasesSortedByScore(transcriptText: string) {
   const comprehendResponse = await comprehend.detectKeyPhrases({
     Text: transcriptText,
@@ -117,6 +143,13 @@ async function detectUniqueKeyPhrasesSortedByScore(transcriptText: string) {
   }
   return uniqueSortedKeyPhrases;
 }
+
+/**
+ * Generates a concatenated string of key phrases from a set of unique key phrases.
+ * Limits the result to a maximum number of characters.
+ * @param sortedUniqueKeyPhrases - A set of sorted unique key phrases.
+ * @returns A concatenated string of key phrases.
+ */
 function getKeyPhraseString(sortedUniqueKeyPhrases: Set<string>) {
   const numberOfKeyPhrases = Math.min(
     sortedUniqueKeyPhrases.size,

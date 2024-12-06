@@ -22,12 +22,32 @@ interface Text2ImageConfig {
   };
 }
 export interface Text2ImageProps {
+  /**
+   * The name of the S3 bucket where the generated image will be stored.
+   */
   bucketName: string;
+  /**
+   * The S3 key prefix for storing the generated image.
+   */
   prefix: string;
+  /**
+   * The textual description used as a prompt for generating the image.
+   */
   prompt: string;
 }
+
 export class Text2Image extends Construct {
+  /**
+   * The Bedrock task for invoking the image generation model in AWS Step Functions.
+   */
   public readonly task: BedrockInvokeModel;
+
+  /**
+   * Constructs a new instance of the Text2Image task for integrating with AWS Bedrock.
+   * @param scope - The parent construct.
+   * @param id - The unique identifier for the construct.
+   * @param props - The properties required to configure the Text2Image task.
+   */
   constructor(scope: Construct, id: string, props: Text2ImageProps) {
     super(scope, id);
     // https://docs.aws.amazon.com/step-functions/latest/dg/connect-bedrock.html
@@ -65,11 +85,16 @@ export class Text2Image extends Construct {
       },
     });
   }
+
+  /**
+   * Adds the required permissions for the specified IAM role to invoke the Bedrock model.
+   * @param role - The IAM role that requires permissions to invoke the Bedrock model.
+   */
   public addPermissions(role: Role) {
     role.addToPolicy(
       new PolicyStatement({
         actions: ["bedrock:InvokeModel"],
-        resources: ["*"], // TODO restrict this
+        resources: ["*"], // TODO restrict in production
       })
     );
   }

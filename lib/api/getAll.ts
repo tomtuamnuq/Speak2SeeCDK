@@ -13,6 +13,12 @@ export interface ProjectionResult {
   id: string;
   processingStatus: ProcessingStatus;
 }
+/**
+ * Lambda function to retrieve all processing items for a specific user.
+ * @param event - The API Gateway event containing the request details.
+ * @param context - The Lambda execution context.
+ * @returns An API Gateway response with the list of items or an error message.
+ */
 async function handler(
   event: APIGatewayProxyEvent,
   context: Context
