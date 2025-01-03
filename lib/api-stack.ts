@@ -1,10 +1,13 @@
 import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
 import {
+  AccessLogFormat,
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
   Cors,
   IResource,
   LambdaIntegration,
+  LogGroupLogDestination,
+  MethodLoggingLevel,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import { IUserPool } from "aws-cdk-lib/aws-cognito";
@@ -16,9 +19,11 @@ import { join } from "path";
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { IStateMachine } from "aws-cdk-lib/aws-stepfunctions";
+import { LogGroup } from "aws-cdk-lib/aws-logs";
 
 interface ApiStackProps extends StackProps {
   restApiName: string;
+  stage: string;
   userPool: IUserPool;
   bucket: IBucket;
   table: ITable;
@@ -32,20 +37,49 @@ export class ApiStack extends Stack {
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
-
     this.props = props;
+
+    // Create CloudWatch Log Group
+    const logDestination = new LogGroupLogDestination(
+      new LogGroup(this, "ApiGatewayAccessLogs")
+    );
+
+    // Create a Cognito User Pool Authorizer to secure the API
+    this.authorizer = new CognitoUserPoolsAuthorizer(this, "ApiAuthorizer", {
+      cognitoUserPools: [props.userPool],
+      identitySource: "method.request.header.Authorization",
+    });
     // Create an API Gateway REST API
     this.api = new RestApi(this, "Speak2SeeApi", {
       restApiName: props.restApiName,
       description:
         "This service handles audio uploads and downloads of processing results.",
       binaryMediaTypes: ["audio/wav"],
-    });
-
-    // Create a Cognito User Pool Authorizer
-    this.authorizer = new CognitoUserPoolsAuthorizer(this, "ApiAuthorizer", {
-      cognitoUserPools: [props.userPool],
-      identitySource: "method.request.header.Authorization",
+      defaultMethodOptions: {
+        authorizer: this.authorizer,
+        authorizationType: AuthorizationType.COGNITO,
+        requestParameters: {
+          "method.request.header.Content-Type": true,
+        },
+        methodResponses: [
+          {
+            statusCode: "200",
+            responseParameters: {
+              "method.response.header.Content-Type": true,
+            },
+          },
+        ],
+      },
+      deployOptions: {
+        stageName: props.stage,
+        metricsEnabled: true,
+        loggingLevel: MethodLoggingLevel.INFO,
+        dataTraceEnabled: false, // see StepFunction state instead
+        accessLogDestination: logDestination,
+        accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
+        throttlingBurstLimit: 10, // 10 requests per second at most
+        throttlingRateLimit: 1, // Only 1 concurrent request
+      },
     });
 
     const uploadLambda = this.createLambda("UploadFunction", "upload.ts");
@@ -126,21 +160,7 @@ export class ApiStack extends Stack {
       },
     });
 
-    // Add method to the /route resource with Cognito Authorizer
-    resource.addMethod(method, new LambdaIntegration(lambda), {
-      authorizer: this.authorizer,
-      authorizationType: AuthorizationType.COGNITO,
-      requestParameters: {
-        "method.request.header.Content-Type": true,
-      },
-      methodResponses: [
-        {
-          statusCode: "200",
-          responseParameters: {
-            "method.response.header.Content-Type": true,
-          },
-        },
-      ],
-    });
+    // Add method to the /route resource
+    resource.addMethod(method, new LambdaIntegration(lambda));
   }
 }

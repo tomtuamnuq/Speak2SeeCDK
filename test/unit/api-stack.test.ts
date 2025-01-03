@@ -31,6 +31,7 @@ describe("ApiStack", () => {
     // Create the ApiStack
     const stack = new ApiStack(app, "TestApiStack", {
       restApiName: "test-endpoint",
+      stage: "test",
       userPool: authStack.userPool,
       bucket: dataStack.bucket,
       table: dataStack.table,

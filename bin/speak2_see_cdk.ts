@@ -41,6 +41,7 @@ addProjectTags(speak2SeeStack, config.tags);
 
 const apiStack = new ApiStack(app, stackName("api", stage), {
   restApiName: config.restApiName,
+  stage: stage,
   userPool: authStack.userPool,
   bucket: dataStack.bucket,
   table: dataStack.table,
