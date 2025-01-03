@@ -18,6 +18,7 @@ import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { IStateMachine } from "aws-cdk-lib/aws-stepfunctions";
 
 interface ApiStackProps extends StackProps {
+  restApiName: string;
   userPool: IUserPool;
   bucket: IBucket;
   table: ITable;
@@ -35,7 +36,7 @@ export class ApiStack extends Stack {
     this.props = props;
     // Create an API Gateway REST API
     this.api = new RestApi(this, "Speak2SeeApi", {
-      restApiName: "Speak2SeeService",
+      restApiName: props.restApiName,
       description:
         "This service handles audio uploads and downloads of processing results.",
       binaryMediaTypes: ["audio/wav"],

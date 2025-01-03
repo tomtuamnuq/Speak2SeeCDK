@@ -1,7 +1,7 @@
 import { App } from "aws-cdk-lib";
 import { AuthStack } from "../../lib/auth-stack";
 import { Match, Template } from "aws-cdk-lib/assertions";
-
+const userPoolName = "test-users";
 describe("AuthStack", () => {
   let app: App;
   let stack: AuthStack;
@@ -9,13 +9,13 @@ describe("AuthStack", () => {
 
   beforeEach(() => {
     app = new App();
-    stack = new AuthStack(app, "TestAuthStack");
+    stack = new AuthStack(app, "TestAuthStack", { userPoolName: userPoolName });
     template = Template.fromStack(stack);
   });
 
   test("creates a Cognito User Pool", () => {
     template.hasResourceProperties("AWS::Cognito::UserPool", {
-      UserPoolName: "AudioAppUserPool",
+      UserPoolName: userPoolName,
       AutoVerifiedAttributes: ["email"],
       Policies: {
         PasswordPolicy: {

@@ -16,7 +16,9 @@ describe("ApiStack", () => {
     app = new App();
 
     // Create dependent stacks
-    const authStack = new AuthStack(app, "TestAuthStack", {});
+    const authStack = new AuthStack(app, "TestAuthStack", {
+      userPoolName: "test-users",
+    });
     const dataStack = new DataStack(app, "TestDataStack", {
       bucketName,
       tableName,
@@ -28,6 +30,7 @@ describe("ApiStack", () => {
 
     // Create the ApiStack
     const stack = new ApiStack(app, "TestApiStack", {
+      restApiName: "test-endpoint",
       userPool: authStack.userPool,
       bucket: dataStack.bucket,
       table: dataStack.table,

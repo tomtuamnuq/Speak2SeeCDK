@@ -11,6 +11,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { ProcessingStatus } from "../../lib/processing";
 import { ProjectionResult } from "../../lib/api/getAll";
+import { stackName } from "../../lib/config/environment-config";
 
 dotenv.config({
   path: join(__dirname, ".env"),
@@ -19,10 +20,12 @@ dotenv.config({
 const outputs = JSON.parse(
   readFileSync(join(__dirname, "outputs.json"), "utf-8")
 );
+const stage = "dev";
+const userPoolStackName = stackName("auth", stage);
+const apiEndpoint: string = outputs[stackName("api", stage)].ApiEndpoint;
+const userPoolId: string = outputs[userPoolStackName].UserPoolId;
+const userPoolClientId: string = outputs[userPoolStackName].UserPoolClientId;
 
-const apiEndpoint: string = outputs.ApiStack.ApiEndpoint;
-const userPoolId: string = outputs.AuthStack.UserPoolId;
-const userPoolClientId: string = outputs.AuthStack.UserPoolClientId;
 const testAudioFilePath = join(__dirname, "resources", "audio.wav");
 const email = process.env.EMAIL!;
 const username = process.env.USERNAME!;

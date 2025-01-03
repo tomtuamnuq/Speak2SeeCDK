@@ -2,15 +2,18 @@ import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { UserPool, UserPoolClient } from "aws-cdk-lib/aws-cognito";
 import { Construct } from "constructs";
 
+interface AuthStackProps extends StackProps {
+  userPoolName: string;
+}
 export class AuthStack extends Stack {
   public readonly userPool: UserPool;
   public readonly userPoolClient: UserPoolClient;
 
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
     // Create a Cognito User Pool and a Client for simple username+password auth
     this.userPool = new UserPool(this, "UserPool", {
-      userPoolName: "AudioAppUserPool",
+      userPoolName: props.userPoolName,
       selfSignUpEnabled: false,
       signInAliases: { username: true, email: true },
       autoVerify: { email: true },

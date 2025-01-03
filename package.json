@@ -8,7 +8,13 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "deploy:dev": "cdk deploy --all -c stage=dev --outputs-file ./test/integration/outputs.json --require-approval never",
+    "deploy:prod": "cdk deploy --all -c stage=prod --outputs-file ./outputs.json",
+    "diff:dev": "cdk diff -c stage=dev",
+    "diff:prod": "cdk diff -c stage=prod",
+    "destroy:dev": "cdk destroy --all -c stage=dev --require-approval never",
+    "destroy:prod": "cdk destroy --all -c stage=prod"
   },
   "devDependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.699.0",

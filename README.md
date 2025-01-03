@@ -82,9 +82,13 @@ The project includes extensive unit and integration tests:
 - **transcribe test (test/unit/workflow/transcribe.test.ts)** verifies the Step Functions fragment for transcription logic.
 - **Text2Image test (test/unit/workflow/bedrock.test.ts)** checks the Bedrock image generation task configuration.
 
-These tests mock AWS SDK calls with `aws-sdk-client-mock` to ensure logic correctness without hitting AWS services.
+These tests mock AWS SDK calls with `aws-sdk-client-mock` to ensure logic correctness without hitting AWS services. They require an authentication token for ECR public repository to pull the `SAM` docker images for local execution of lambda functions. To resolve an ECR authentication error, run:
 
-Run the unit tests:
+```bash
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+```
+
+Run all the unit tests:
 
 ```bash
 npm test -- test/unit
@@ -99,7 +103,7 @@ npm test -- test/unit
   - Uses `axios` to call `/upload`, `/getAll`, `/get/{itemID}` endpoints.
   - Validates that finished items return all fields as truthy and unfinished items return at least audio and processingStatus.
 
-Set `USERNAME`, `PASSWORD`, and `EMAIL` in a `.env` file for integration tests (in `/test/integration/.env`). Ensure that the deployment outputs are written to `test/integration/outputs.json`.
+Set `USERNAME`, `PASSWORD`, and `EMAIL` in a `.env` file for integration tests (in `/test/integration/.env`). Ensure that the deployment outputs exist in `test/integration/outputs.json`.
 
 Run the integration tests:
 
@@ -109,13 +113,34 @@ npm test -- test/integration
 
 ## Deployment
 
-- Deploy the stack:
+The project supports separate deployments for development and production environments.
 
-  ```bash
-  cdk deploy --all --outputs-file ./test/integration/outputs.json --require-approval never
-  ```
+### Development Environment
 
-- Destroy the stack:
-  ```bash
-  cdk destroy --all
-  ```
+```bash
+# Deploy development stack
+npm run deploy:dev
+
+# Review changes before deployment
+npm run diff:dev
+
+# Destroy development stack
+npm run destroy:dev
+```
+
+For integration testing, the `dev` deployment outputs are written to `./test/integration/outputs.json`.
+
+### Production Environment
+
+```bash
+# Deploy production stack
+npm run deploy:prod
+
+# Review changes before deployment
+npm run diff:prod
+
+# Destroy production stack
+npm run destroy:prod
+```
+
+Production outputs are written to `./outputs.json`.
