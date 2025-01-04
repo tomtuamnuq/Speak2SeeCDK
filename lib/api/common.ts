@@ -8,7 +8,7 @@ import {
 
 interface UploadResponse {
   id: string;
-  createdAt: string;
+  createdAt: number;
   processingStatus: ProcessingStatus;
 }
 

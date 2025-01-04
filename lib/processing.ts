@@ -17,6 +17,7 @@ export const MAXIMUM_NUMBER_OF_KEY_PHRASES = 10; // Maximum key phrases to extra
 export const SPOKEN_LANGUAGE_CODE = "en-US"; // Language code for Transcribe
 export const TRANSCRIBE_POLLING_INTERVAL = 15; // Polling interval in seconds for Transcribe
 export const WORKFLOW_TIMEOUT_DURATION = 1; // Workflow timeout in minutes
+export const ITEM_EXPIRATION_DAYS = 5; // Items will be deleted after 5 days
 
 /**
  * Generates the S3 key for the audio file.
@@ -67,11 +68,22 @@ export function transcriptionHasNotBeenCreated(
 export interface DynamoDBTableSchema {
   itemID: string; // Primary key - used together with userID for queries
   userID: string; // User identifier - partition key
-  createdAt: string; // ISO8601 timestamp
+  createdAt: number; // Current time in epoch second format
+  expireAt: number; // Unix timestamp in seconds for TTL
   executionID: string; // ARN of the Step Function Workflow execution
   processingStatus: ProcessingStatus; // Restricted processingStatus values
   transcription?: string; // Optional transcription text
   prompt?: string; // Optional prompt for image generation
+}
+
+/**
+ * Helper function to calculate TTL timestamp.
+ * @param currentTime - The current time in epoch second format
+ * @returns The expireAt time (ITEM_EXPIRATION_DAYS from now) in epoch second format
+ *
+ */
+export function calculateTTL(currentTime: number): number {
+  return Math.floor((new Date().getTime() + 90 * 24 * 60 * 60 * 1000) / 1000);
 }
 
 /**

@@ -1,4 +1,10 @@
-import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
+import {
+  CfnOutput,
+  Duration,
+  RemovalPolicy,
+  Stack,
+  StackProps,
+} from "aws-cdk-lib";
 import { BlockPublicAccess, Bucket, IBucket } from "aws-cdk-lib/aws-s3";
 import {
   AttributeType,
@@ -7,6 +13,7 @@ import {
   ITable,
 } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
+import { ITEM_EXPIRATION_DAYS } from "./processing";
 
 interface DataStackProps extends StackProps {
   bucketName: string;
@@ -26,6 +33,13 @@ export class DataStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY, // for simple recreation and testing purposes
       autoDeleteObjects: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      lifecycleRules: [
+        {
+          id: "optimize-storage-costs",
+          enabled: true,
+          expiration: Duration.days(ITEM_EXPIRATION_DAYS),
+        },
+      ],
     });
 
     new CfnOutput(this, "BucketName", {
@@ -39,6 +53,7 @@ export class DataStack extends Stack {
       sortKey: { name: "itemID", type: AttributeType.STRING }, // key for common operations: itemID
       billingMode: BillingMode.PAY_PER_REQUEST, // On-demand pricing for scalability
       removalPolicy: RemovalPolicy.DESTROY, // Automatically delete the table when the stack is destroyed
+      timeToLiveAttribute: "ttl", // Enable TTL
     });
 
     new CfnOutput(this, "TableName", {

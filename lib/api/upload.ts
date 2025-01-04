@@ -13,6 +13,7 @@ import {
   getStateMachineArn,
 } from "./common";
 import {
+  calculateTTL,
   DynamoDBTableSchema,
   getAudioKey,
   ProcessingStatus,
@@ -86,13 +87,16 @@ async function handler(
       );
       throw new Error("Failed to start workflow");
     }
-    const createdAt = startWorkflowResult.startDate.toISOString();
+    const createdAt = Math.floor(
+      startWorkflowResult.startDate.getTime() / 1000
+    ); // Get the current time in epoch second format
 
     // Create the DynamoDB entry
     const item: DynamoDBTableSchema = {
       userID: userID,
       itemID: prefix,
       createdAt: createdAt,
+      expireAt: calculateTTL(createdAt),
       executionID: startWorkflowResult.executionArn,
       processingStatus: ProcessingStatus.IN_PROGRESS,
     };
@@ -102,7 +106,8 @@ async function handler(
       Item: {
         userID: { S: item.userID },
         itemID: { S: item.itemID },
-        createdAt: { S: item.createdAt },
+        createdAt: { N: item.createdAt.toString() },
+        expireAt: { N: item.expireAt.toString() },
         executionID: { S: item.executionID },
         processingStatus: { S: item.processingStatus },
       },

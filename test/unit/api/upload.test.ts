@@ -16,7 +16,7 @@ describe("Upload Lambda Function", () => {
   const mockUserId = "mock-user-id";
   const mockStateMachineArn = "mock-state-machine";
   const mockExecutionArn = "mock-execution";
-  const mockTime = "2024-11-23T15:30:45.000Z";
+  const mockTime = new Date("2024-11-23T15:30:45.000Z");
 
   beforeEach(() => {
     // Reset mocks
@@ -37,7 +37,7 @@ describe("Upload Lambda Function", () => {
       .resolves({ $metadata: { httpStatusCode: 200 } });
     sfnMock.on(StartExecutionCommand).resolves({
       executionArn: mockExecutionArn,
-      startDate: new Date(mockTime),
+      startDate: mockTime,
     });
     dynamoDbMock
       .on(PutItemCommand)
@@ -67,7 +67,7 @@ describe("Upload Lambda Function", () => {
     const responseBody = JSON.parse(response.body);
     expect(responseBody).toEqual({
       id: expect.any(String),
-      createdAt: mockTime,
+      createdAt: mockTime.getTime() / 1000,
       processingStatus: ProcessingStatus.IN_PROGRESS,
     });
 
