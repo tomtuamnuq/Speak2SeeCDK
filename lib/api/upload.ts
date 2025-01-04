@@ -15,6 +15,7 @@ import {
 import {
   calculateTTL,
   DynamoDBTableSchema,
+  EXPRESS_SIZE_THRESHOLD,
   getAudioKey,
   ProcessingStatus,
   requestFailed,
@@ -37,7 +38,6 @@ async function handler(
 ): Promise<APIGatewayProxyResult> {
   try {
     const { bucketName, tableName, userID } = getEnvironment(event);
-    const stateMachineArn = getStateMachineArn();
 
     // Get the audio file from the request body (binary data)
     const body = event.body;
@@ -54,7 +54,8 @@ async function handler(
     const prefix = randomUUID();
     // Decode the base64-encoded binary data
     const audioBuffer = Buffer.from(body, isBase64Encoded ? "base64" : "utf-8");
-
+    const useExpress = audioBuffer.length < EXPRESS_SIZE_THRESHOLD;
+    const stateMachineArn = getStateMachineArn(useExpress);
     // Upload the audio file to S3
     const putObjectResult = await s3.putObject({
       Bucket: bucketName,

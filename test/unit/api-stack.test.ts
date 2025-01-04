@@ -35,7 +35,8 @@ describe("ApiStack", () => {
       userPool: authStack.userPool,
       bucket: dataStack.bucket,
       table: dataStack.table,
-      stateMachine: workflowStack.stateMachine,
+      stateMachineStandard: workflowStack.stateMachineStandard,
+      stateMachineExpress: workflowStack.stateMachineExpress,
     });
 
     template = Template.fromStack(stack);
@@ -57,9 +58,14 @@ describe("ApiStack", () => {
               "^TestDataStack:ExportsOutputRefDynamoDBTable"
             ),
           }),
-          STATE_MACHINE_ARN: Match.objectLike({
+          STATE_MACHINE_STANDARD_ARN: Match.objectLike({
             "Fn::ImportValue": Match.stringLikeRegexp(
-              "^TestWorkflowStack:ExportsOutputRefTestStateMachine"
+              "^TestWorkflowStack:ExportsOutputRefStandardStateMachine"
+            ),
+          }),
+          STATE_MACHINE_EXPRESS_ARN: Match.objectLike({
+            "Fn::ImportValue": Match.stringLikeRegexp(
+              "^TestWorkflowStack:ExportsOutputRefExpressStateMachine"
             ),
           }),
         },

@@ -40,6 +40,7 @@ describe("TranscribeWorkflow", () => {
       transcriptionFailed: new Pass(stack, "WorkflowFailed", {
         resultPath: JsonPath.DISCARD,
       }),
+      transcribePollingInterval: 1,
     });
     const startState = injectParameters.next(workflow);
     new StateMachine(stack, "TestStateMachine", {

@@ -2,7 +2,6 @@ import {
   FoundationModel,
   FoundationModelIdentifier,
 } from "aws-cdk-lib/aws-bedrock";
-import { PolicyStatement, Role } from "aws-cdk-lib/aws-iam";
 import { JsonPath, TaskInput } from "aws-cdk-lib/aws-stepfunctions";
 import { BedrockInvokeModel } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
@@ -84,18 +83,5 @@ export class Text2Image extends Construct {
         s3OutputUri: imageGenerationOutputUri,
       },
     });
-  }
-
-  /**
-   * Adds the required permissions for the specified IAM role to invoke the Bedrock model.
-   * @param role - The IAM role that requires permissions to invoke the Bedrock model.
-   */
-  public addPermissions(role: Role) {
-    role.addToPolicy(
-      new PolicyStatement({
-        actions: ["bedrock:InvokeModel"],
-        resources: ["*"], // TODO restrict in production
-      })
-    );
   }
 }

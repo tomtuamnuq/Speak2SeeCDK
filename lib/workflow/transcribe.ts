@@ -17,7 +17,6 @@ import {
   AUDIO_FILENAME,
   AUDIO_MEDIA_FORMAT,
   SPOKEN_LANGUAGE_CODE,
-  TRANSCRIBE_POLLING_INTERVAL,
   TRANSCRIPTION_RESULT_FILENAME,
 } from "../processing";
 import { PolicyStatement, Role } from "aws-cdk-lib/aws-iam";
@@ -27,6 +26,7 @@ export interface TranscribeWorkflowProps {
   prefix: string;
   transcriptionCompleted: INextable & IChainable;
   transcriptionFailed: INextable & IChainable;
+  transcribePollingInterval: number;
 }
 
 /**
@@ -87,7 +87,9 @@ export class TranscribeWorkflow extends StateMachineFragment {
 
     // Task: Wait for a few seconds
     const waitForTranscription = new Wait(this, "WaitForTranscription", {
-      time: WaitTime.duration(Duration.seconds(TRANSCRIBE_POLLING_INTERVAL)),
+      time: WaitTime.duration(
+        Duration.seconds(props.transcribePollingInterval)
+      ),
     });
 
     // Task: Check Transcription Status

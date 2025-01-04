@@ -45,7 +45,8 @@ const apiStack = new ApiStack(app, stackName("api", stage), {
   userPool: authStack.userPool,
   bucket: dataStack.bucket,
   table: dataStack.table,
-  stateMachine: speak2SeeStack.stateMachine,
+  stateMachineStandard: speak2SeeStack.stateMachineStandard,
+  stateMachineExpress: speak2SeeStack.stateMachineExpress,
   env,
 });
 addProjectTags(apiStack, config.tags);

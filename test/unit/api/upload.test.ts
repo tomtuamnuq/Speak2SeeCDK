@@ -14,7 +14,6 @@ describe("Upload Lambda Function", () => {
   const mockBucket = "test-bucket";
   const mockTable = "test-table";
   const mockUserId = "mock-user-id";
-  const mockStateMachineArn = "mock-state-machine";
   const mockExecutionArn = "mock-execution";
   const mockTime = new Date("2024-11-23T15:30:45.000Z");
 
@@ -27,7 +26,8 @@ describe("Upload Lambda Function", () => {
     // Set required environment variables
     process.env.BUCKET_NAME = mockBucket;
     process.env.TABLE_NAME = mockTable;
-    process.env.STATE_MACHINE_ARN = mockStateMachineArn;
+    process.env.STATE_MACHINE_STANDARD_ARN = "mock-state-machine-standard";
+    process.env.STATE_MACHINE_EXPRESS_ARN = "mock-state-machine-express";
   });
 
   test("uploads audio to S3, starts the workflow, and adds a valid item to DynamoDB", async () => {

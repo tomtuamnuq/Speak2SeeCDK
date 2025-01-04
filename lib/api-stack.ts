@@ -27,7 +27,8 @@ interface ApiStackProps extends StackProps {
   userPool: IUserPool;
   bucket: IBucket;
   table: ITable;
-  stateMachine: IStateMachine;
+  stateMachineStandard: IStateMachine;
+  stateMachineExpress: IStateMachine;
 }
 
 export class ApiStack extends Stack {
@@ -90,7 +91,8 @@ export class ApiStack extends Stack {
         resources: [`${props.bucket.bucketArn}/*`], // Restrict to the bucket
       })
     );
-    props.stateMachine.grantStartExecution(uploadLambda);
+    props.stateMachineStandard.grantStartExecution(uploadLambda);
+    props.stateMachineExpress.grantStartExecution(uploadLambda);
     uploadLambda.addToRolePolicy(
       new PolicyStatement({
         actions: ["dynamodb:PutItem"], // Only allow PutItem
@@ -143,7 +145,10 @@ export class ApiStack extends Stack {
       environment: {
         BUCKET_NAME: this.props.bucket.bucketName,
         TABLE_NAME: this.props.table.tableName,
-        STATE_MACHINE_ARN: this.props.stateMachine.stateMachineArn,
+        STATE_MACHINE_STANDARD_ARN:
+          this.props.stateMachineStandard.stateMachineArn,
+        STATE_MACHINE_EXPRESS_ARN:
+          this.props.stateMachineExpress.stateMachineArn,
       },
     });
   }
