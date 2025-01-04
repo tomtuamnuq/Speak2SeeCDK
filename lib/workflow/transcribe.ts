@@ -1,9 +1,10 @@
-import { Duration } from "aws-cdk-lib";
+import { Duration, Stack } from "aws-cdk-lib";
 import {
   Choice,
   Condition,
   IChainable,
   INextable,
+  IntegrationPattern,
   JsonPath,
   State,
   StateMachineFragment,
@@ -37,6 +38,7 @@ export interface TranscribeWorkflowProps {
 export class TranscribeWorkflow extends StateMachineFragment {
   public readonly startState: State;
   public readonly endStates: INextable[];
+  private transcriptionJobArn: string;
   /**
    * Constructs a new TranscribeWorkflow.
    * @param scope - The Construct scope.
@@ -48,7 +50,9 @@ export class TranscribeWorkflow extends StateMachineFragment {
 
     const { bucketName, prefix, transcriptionCompleted, transcriptionFailed } =
       props;
-
+    const region = Stack.of(this).region;
+    const account = Stack.of(this).account;
+    this.transcriptionJobArn = `arn:aws:transcribe:${region}:${account}:transcription-job/*`;
     // Task: Start Transcription Job
     const startTranscriptionTask = new CallAwsService(
       this,
@@ -76,7 +80,8 @@ export class TranscribeWorkflow extends StateMachineFragment {
           ),
         },
         resultPath: "$.transcriptionJob",
-        iamResources: ["*"], // TODO Restrict to specific resources in production
+        iamResources: [this.transcriptionJobArn],
+        integrationPattern: IntegrationPattern.REQUEST_RESPONSE, // run job or token not supported for Express
       }
     );
 
@@ -93,7 +98,7 @@ export class TranscribeWorkflow extends StateMachineFragment {
         TranscriptionJobName: prefix,
       },
       resultPath: "$.transcriptionStatus",
-      iamResources: ["*"], // TODO Restrict to specific resources in production
+      iamResources: [this.transcriptionJobArn],
     });
 
     // Choice: Is Transcription Complete?
@@ -135,7 +140,7 @@ export class TranscribeWorkflow extends StateMachineFragment {
           "transcribe:GetTranscriptionJob",
           "transcribe:DeleteTranscriptionJob",
         ],
-        resources: ["*"], // TODO restrict to specific resources in production
+        resources: [this.transcriptionJobArn],
       })
     );
   }
