@@ -7,25 +7,16 @@ export function applyCommonSuppressions(app: App) {
   stacks.forEach((stack) => {
     // Step Functions X-Ray suppressions
     if (stack.node.id.includes("core")) {
-      const xraySuppressions = [
-        {
-          id: "AwsSolutions-SF2",
-          reason:
-            "X-Ray tracing disabled due to cost considerations. Sufficient monitoring is achieved through CloudWatch logs and metrics. Reference: https://aws.amazon.com/xray/pricing/",
-        },
-      ];
-
-      // Apply to both Standard and Express State Machines
       NagSuppressions.addResourceSuppressionsByPath(
         stack,
-        `/${stack.node.id}/StandardStateMachine/Resource`,
-        xraySuppressions
-      );
-
-      NagSuppressions.addResourceSuppressionsByPath(
-        stack,
-        `/${stack.node.id}/ExpressStateMachine/Resource`,
-        xraySuppressions
+        `/${stack.node.id}/StateMachine/Resource`,
+        [
+          {
+            id: "AwsSolutions-SF2",
+            reason:
+              "X-Ray tracing disabled due to cost considerations. Sufficient monitoring is achieved through CloudWatch logs and metrics. Reference: https://aws.amazon.com/xray/pricing/",
+          },
+        ]
       );
     }
 

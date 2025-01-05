@@ -12,12 +12,6 @@ export const TEXT2IMG_RESULT_FILENAME = "image.json"; // Filename for text-to-im
 
 export const SPOKEN_LANGUAGE_CODE = "en-US"; // Language code for Transcribe
 
-export const STANDARD_TRANSCRIBE_POLLING_INTERVAL = 30; // Polling interval in seconds for Transcribe
-
 export const EXPRESS_TRANSCRIBE_POLLING_INTERVAL = 3; // Polling interval in seconds for Transcribe
 
-export const STANDARD_TIMEOUT_DURATION = 15; // Workflow timeout in minutes
-
 export const EXPRESS_TIMEOUT_DURATION = 1; // Workflow timeout in minutes
-
-export const EXPRESS_SIZE_THRESHOLD = 10 * 1024 * 1024; // 10MB

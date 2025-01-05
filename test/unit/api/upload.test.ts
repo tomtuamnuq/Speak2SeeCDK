@@ -26,8 +26,7 @@ describe("Upload Lambda Function", () => {
     // Set required environment variables
     process.env.BUCKET_NAME = mockBucket;
     process.env.TABLE_NAME = mockTable;
-    process.env.STATE_MACHINE_STANDARD_ARN = "mock-state-machine-standard";
-    process.env.STATE_MACHINE_EXPRESS_ARN = "mock-state-machine-express";
+    process.env.STATE_MACHINE_ARN = "mock-state-machine-express";
     process.env.ITEM_EXPIRATION_DAYS = "1";
   });
 

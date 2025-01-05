@@ -20,7 +20,6 @@ import {
   ProcessingStatus,
   requestFailed,
 } from "../utils";
-import { EXPRESS_SIZE_THRESHOLD } from "../config/constants";
 import { SFN } from "@aws-sdk/client-sfn";
 
 const s3 = new S3();
@@ -54,8 +53,7 @@ async function handler(
     const prefix = randomUUID();
     // Decode the base64-encoded binary data
     const audioBuffer = Buffer.from(body, isBase64Encoded ? "base64" : "utf-8");
-    const useExpress = audioBuffer.length < EXPRESS_SIZE_THRESHOLD;
-    const stateMachineArn = getStateMachineArn(useExpress);
+    const stateMachineArn = getStateMachineArn();
     // Upload the audio file to S3
     const putObjectResult = await s3.putObject({
       Bucket: bucketName,

@@ -26,8 +26,6 @@ import {
 import {
   EXPRESS_TIMEOUT_DURATION,
   EXPRESS_TRANSCRIBE_POLLING_INTERVAL,
-  STANDARD_TIMEOUT_DURATION,
-  STANDARD_TRANSCRIBE_POLLING_INTERVAL,
 } from "./config/constants";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
@@ -47,8 +45,7 @@ interface Speak2SeeProps extends StackProps {
 }
 
 export class Speak2SeeCdkStack extends Stack {
-  public readonly stateMachineStandard: IStateMachine;
-  public readonly stateMachineExpress: IStateMachine;
+  public readonly stateMachine: IStateMachine;
   constructor(scope: Construct, id: string, props: Speak2SeeProps) {
     super(scope, id, props);
 
@@ -62,7 +59,7 @@ export class Speak2SeeCdkStack extends Stack {
         TABLE_NAME: props.table.tableName,
       },
       memorySize: 128, // TODO set w.r.t. maximum file size of uploaded file and resulting transcription text
-      timeout: Duration.seconds(60),
+      timeout: Duration.seconds(20),
     });
     // Define the Lambda task to process transcription
     const processingLambda = new NodejsFunction(this, "ImagePromptFunction", {
@@ -73,7 +70,7 @@ export class Speak2SeeCdkStack extends Stack {
         BUCKET_NAME: props.bucket.bucketName,
       },
       memorySize: 128, // TODO set w.r.t. maximum file size of uploaded file and resulting transcription text
-      timeout: Duration.seconds(60),
+      timeout: Duration.seconds(20),
     });
     const stateMachineRole = this.createStateMachineRole(
       props.bucket,
@@ -82,15 +79,6 @@ export class Speak2SeeCdkStack extends Stack {
       finalLambda
     );
 
-    const transcribeWorkflowStandard = this.createTranscribeWorkflow(
-      props.bucket.bucketName,
-      props.table,
-      processingLambda,
-      finalLambda,
-      STANDARD_TRANSCRIBE_POLLING_INTERVAL,
-      (id) => `${id}-Standard`
-    );
-    transcribeWorkflowStandard.addPermissions(stateMachineRole);
     const transcribeWorkflowExpress = this.createTranscribeWorkflow(
       props.bucket.bucketName,
       props.table,
@@ -101,28 +89,13 @@ export class Speak2SeeCdkStack extends Stack {
     );
     transcribeWorkflowExpress.addPermissions(stateMachineRole);
 
-    this.stateMachineStandard = new StateMachine(this, "StandardStateMachine", {
-      definitionBody: DefinitionBody.fromChainable(transcribeWorkflowStandard),
-      role: stateMachineRole,
-      stateMachineType: StateMachineType.STANDARD,
-      timeout: Duration.minutes(STANDARD_TIMEOUT_DURATION),
-      logs: {
-        destination: new LogGroup(this, "StateMachineLogsStandard", {
-          retention: props.logRetentionDays,
-          removalPolicy: props.logRemovalPolicy,
-        }),
-        includeExecutionData: false,
-        level: LogLevel.ALL,
-      },
-      tracingEnabled: false, // Disable X-Ray tracing (default)
-    });
-    this.stateMachineExpress = new StateMachine(this, "ExpressStateMachine", {
+    this.stateMachine = new StateMachine(this, "StateMachine", {
       definitionBody: DefinitionBody.fromChainable(transcribeWorkflowExpress),
       role: stateMachineRole,
       stateMachineType: StateMachineType.EXPRESS,
       timeout: Duration.minutes(EXPRESS_TIMEOUT_DURATION),
       logs: {
-        destination: new LogGroup(this, "StateMachineLogsExpress", {
+        destination: new LogGroup(this, "StateMachineLogs", {
           retention: props.logRetentionDays,
           removalPolicy: props.logRemovalPolicy,
         }),

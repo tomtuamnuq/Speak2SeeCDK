@@ -1,6 +1,5 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
 import {
-  calculateTTL,
   DynamoDBTableSchema,
   getBucketName,
   getTableName,
@@ -72,14 +71,11 @@ export function getEnvironment(event: APIGatewayProxyEvent) {
 
 /**
  * Retrieves the State Machine ARN from environment variables.
- * @param useExpress - whether to use the express or the standard state machine
- * @throws Error if STATE_MACHINE_STANDARD_ARN or STATE_MACHINE_EXPRESS_ARN is not defined.
+ * @throws Error if STATE_MACHINE_ARN is not defined.
  * @returns The State Machine ARN as a string.
  */
-export function getStateMachineArn(useExpress: boolean): string {
-  const stateMachineArn = useExpress
-    ? process.env.STATE_MACHINE_EXPRESS_ARN
-    : process.env.STATE_MACHINE_STANDARD_ARN;
+export function getStateMachineArn(): string {
+  const stateMachineArn = process.env.STATE_MACHINE_ARN;
   if (!stateMachineArn) {
     throw new Error(
       "State Machine ARN not specified in environment variables."

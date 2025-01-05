@@ -1,5 +1,5 @@
 import { Template, Match } from "aws-cdk-lib/assertions";
-import { App, RemovalPolicy } from "aws-cdk-lib";
+import { App } from "aws-cdk-lib";
 import { ApiStack } from "../../lib/api-stack";
 import { AuthStack } from "../../lib/auth-stack";
 import { DataStack } from "../../lib/data-stack";
@@ -42,8 +42,7 @@ describe("ApiStack", () => {
       userPool: authStack.userPool,
       bucket: dataStack.bucket,
       table: dataStack.table,
-      stateMachineStandard: workflowStack.stateMachineStandard,
-      stateMachineExpress: workflowStack.stateMachineExpress,
+      stateMachine: workflowStack.stateMachine,
       logRemovalPolicy: config.removalPolicy,
       logRetentionDays: config.logRetentionDays,
       itemExpirationDays: config.itemExpirationDays,
@@ -68,14 +67,9 @@ describe("ApiStack", () => {
               "^TestDataStack:ExportsOutputRefDynamoDBTable"
             ),
           }),
-          STATE_MACHINE_STANDARD_ARN: Match.objectLike({
+          STATE_MACHINE_ARN: Match.objectLike({
             "Fn::ImportValue": Match.stringLikeRegexp(
-              "^TestWorkflowStack:ExportsOutputRefStandardStateMachine"
-            ),
-          }),
-          STATE_MACHINE_EXPRESS_ARN: Match.objectLike({
-            "Fn::ImportValue": Match.stringLikeRegexp(
-              "^TestWorkflowStack:ExportsOutputRefExpressStateMachine"
+              "^TestWorkflowStack:ExportsOutputRefStateMachine"
             ),
           }),
         },
