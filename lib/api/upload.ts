@@ -11,15 +11,15 @@ import {
   projectTableItem,
   getEnvironment,
   getStateMachineArn,
-} from "./common";
+} from "./api-utils";
 import {
   calculateTTL,
   DynamoDBTableSchema,
-  EXPRESS_SIZE_THRESHOLD,
   getAudioKey,
   ProcessingStatus,
   requestFailed,
-} from "../processing";
+} from "../utils";
+import { EXPRESS_SIZE_THRESHOLD } from "../config/constants";
 import { SFN } from "@aws-sdk/client-sfn";
 
 const s3 = new S3();

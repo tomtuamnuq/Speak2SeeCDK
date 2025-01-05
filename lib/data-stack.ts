@@ -13,7 +13,7 @@ import {
   ITable,
 } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
-import { ITEM_EXPIRATION_DAYS } from "./processing";
+import { ITEM_EXPIRATION_DAYS } from "./config/constants";
 
 interface DataStackProps extends StackProps {
   bucketName: string;

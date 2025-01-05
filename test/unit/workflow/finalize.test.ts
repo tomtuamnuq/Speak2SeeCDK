@@ -7,7 +7,7 @@ import {
 import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { mockS3BodyStream } from "../utils";
-import { FinalLambdaInput } from "../../../lib/processing";
+import { FinalLambdaInput } from "../../../lib/utils";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);

@@ -5,8 +5,8 @@ import {
   getBucketName,
   ProcessingLambdaInput,
   ProcessingLambdaOutput,
-} from "../processing";
-import { TRANSCRIPTION_RESULT_FILENAME } from "../processing";
+} from "../utils";
+import { TRANSCRIPTION_RESULT_FILENAME } from "../config/constants";
 
 interface TranscribeResult {
   results: {

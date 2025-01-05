@@ -19,14 +19,16 @@ import {
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import {
-  EXPRESS_TIMEOUT_DURATION,
-  EXPRESS_TRANSCRIBE_POLLING_INTERVAL,
   FinalLambdaInput,
   ProcessingLambdaInput,
   ProcessingStatus,
+} from "./utils";
+import {
+  EXPRESS_TIMEOUT_DURATION,
+  EXPRESS_TRANSCRIBE_POLLING_INTERVAL,
   STANDARD_TIMEOUT_DURATION,
   STANDARD_TRANSCRIBE_POLLING_INTERVAL,
-} from "./processing";
+} from "./config/constants";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { join } from "path";
@@ -59,7 +61,7 @@ export class Speak2SeeCdkStack extends Stack {
       },
     });
     // Define the Lambda task to process transcription
-    const processingLambda = new NodejsFunction(this, "ComprehendFunction", {
+    const processingLambda = new NodejsFunction(this, "ImagePromptFunction", {
       runtime: Runtime.NODEJS_20_X,
       handler: "handler",
       entry: join(__dirname, "workflow", "image-prompt.ts"),

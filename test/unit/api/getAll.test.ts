@@ -1,7 +1,7 @@
 import { handler } from "../../../lib/api/getAll";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { ProcessingStatus } from "../../../lib/processing";
+import { ProcessingStatus } from "../../../lib/utils";
 
 const dynamoDbMock = mockClient(DynamoDBClient);
 

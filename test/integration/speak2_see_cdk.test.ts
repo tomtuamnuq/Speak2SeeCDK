@@ -9,7 +9,7 @@ import {
 import * as dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { ProcessingStatus } from "../../lib/processing";
+import { ProcessingStatus } from "../../lib/utils";
 import { ProjectionResult } from "../../lib/api/getAll";
 import { stackName } from "../../lib/config/environment-config";
 

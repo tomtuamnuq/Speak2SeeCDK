@@ -5,13 +5,13 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import { createAPIGatewayResult, getEnvironment } from "./common";
+import { createAPIGatewayResult, getEnvironment } from "./api-utils";
 import {
   getAudioKey,
   getImageKey,
   ProcessingStatus,
   transcriptionHasNotBeenCreated,
-} from "../processing";
+} from "../utils";
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();

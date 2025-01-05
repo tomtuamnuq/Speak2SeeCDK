@@ -5,7 +5,7 @@ import {
 import { JsonPath, TaskInput } from "aws-cdk-lib/aws-stepfunctions";
 import { BedrockInvokeModel } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
-import { TEXT2IMG_RESULT_FILENAME } from "../processing";
+import { TEXT2IMG_RESULT_FILENAME } from "../config/constants";
 
 interface Text2ImageConfig {
   taskType: "TEXT_IMAGE";

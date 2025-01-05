@@ -4,7 +4,7 @@ import {
   getBucketName,
   getTableName,
   ProcessingStatus,
-} from "../processing";
+} from "../utils";
 
 interface UploadResponse {
   id: string;
@@ -72,7 +72,7 @@ export function getEnvironment(event: APIGatewayProxyEvent) {
 /**
  * Retrieves the State Machine ARN from environment variables.
  * @param useExpress - whether to use the express or the standard state machine
- * @throws Error if STATE_MACHINE_ARN is not defined.
+ * @throws Error if STATE_MACHINE_STANDARD_ARN or STATE_MACHINE_EXPRESS_ARN is not defined.
  * @returns The State Machine ARN as a string.
  */
 export function getStateMachineArn(useExpress: boolean): string {

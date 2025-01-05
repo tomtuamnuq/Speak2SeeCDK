@@ -5,9 +5,9 @@ import {
   getImageKey,
   ProcessingStatus,
   requestFailed,
-  TEXT2IMG_RESULT_FILENAME,
-} from "../processing";
-import { getBucketName, getTableName } from "../processing";
+} from "../utils";
+import { TEXT2IMG_RESULT_FILENAME } from "../config/constants";
+import { getBucketName, getTableName } from "../utils";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 
 const s3 = new S3();

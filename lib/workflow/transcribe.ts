@@ -18,7 +18,7 @@ import {
   AUDIO_MEDIA_FORMAT,
   SPOKEN_LANGUAGE_CODE,
   TRANSCRIPTION_RESULT_FILENAME,
-} from "../processing";
+} from "../config/constants";
 import { PolicyStatement, Role } from "aws-cdk-lib/aws-iam";
 
 export interface TranscribeWorkflowProps {

@@ -1,26 +1,14 @@
 /**
- * File and processing-related constants and utility functions.
+ * File, table and processing-related utility functions.
  * Provides key configurations and helpers for handling audio, image, transcription, and DynamoDB schema.
  */
 
 import { __MetadataBearer } from "@aws-sdk/client-s3";
-
-// Constants for filenames and configurations
-export const AUDIO_FILENAME = "audio.wav"; // Default filename for uploaded audio
-export const AUDIO_MEDIA_FORMAT = "wav"; // Audio format used for Transcribe
-export const IMAGE_FILENAME = "image.jpg"; // Default filename for generated image
-export const TRANSCRIPTION_RESULT_FILENAME = "transcript.json"; // Filename for transcription result
-export const TEXT2IMG_RESULT_FILENAME = "image.json"; // Filename for text-to-image result
-// TODO LanguageCode Enum in "@aws-sdk/client-comprehend"
-export const WRITTEN_LANGUAGE_CODE = "en"; // Language code for Comprehend operations
-export const MAXIMUM_NUMBER_OF_KEY_PHRASES = 10; // Maximum key phrases to extract
-export const SPOKEN_LANGUAGE_CODE = "en-US"; // Language code for Transcribe
-export const STANDARD_TRANSCRIBE_POLLING_INTERVAL = 30; // Polling interval in seconds for Transcribe
-export const EXPRESS_TRANSCRIBE_POLLING_INTERVAL = 3; // Polling interval in seconds for Transcribe
-export const STANDARD_TIMEOUT_DURATION = 15; // Workflow timeout in minutes
-export const EXPRESS_TIMEOUT_DURATION = 1; // Workflow timeout in minutes
-export const EXPRESS_SIZE_THRESHOLD = 10 * 1024 * 1024; // 10MB
-export const ITEM_EXPIRATION_DAYS = 5; // Items will be deleted after 5 days
+import {
+  AUDIO_FILENAME,
+  IMAGE_FILENAME,
+  ITEM_EXPIRATION_DAYS,
+} from "./config/constants";
 
 /**
  * Generates the S3 key for the audio file.
@@ -86,7 +74,8 @@ export interface DynamoDBTableSchema {
  *
  */
 export function calculateTTL(currentTime: number): number {
-  return Math.floor((new Date().getTime() + 90 * 24 * 60 * 60 * 1000) / 1000);
+  // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-before-you-start.html
+  return currentTime + ITEM_EXPIRATION_DAYS * 24 * 60 * 60;
 }
 
 /**

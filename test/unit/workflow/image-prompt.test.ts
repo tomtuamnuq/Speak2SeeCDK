@@ -5,7 +5,7 @@ import {
   InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import { mockClient } from "aws-sdk-client-mock";
-import { ProcessingLambdaInput } from "../../../lib/processing";
+import { ProcessingLambdaInput } from "../../../lib/utils";
 import { mockS3BodyStream } from "../utils";
 import { Uint8ArrayBlobAdapter } from "@smithy/util-stream";
 
