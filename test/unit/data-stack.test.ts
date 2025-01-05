@@ -1,21 +1,24 @@
 import { Template } from "aws-cdk-lib/assertions";
 import { DataStack } from "../../lib/data-stack";
 import { App } from "aws-cdk-lib";
-const testBucketName = "test-bucket-name";
-const testTableName = "test-table-name";
+import { getConfig } from "../../lib/config/environment-config";
+const config = getConfig("prod");
 describe("DataStack", () => {
   const app = new App();
-
   const stack = new DataStack(app, "TestDataStack", {
-    bucketName: testBucketName,
-    tableName: testTableName,
+    bucketName: config.bucketName,
+    tableName: config.tableName,
+    removalPolicy: config.removalPolicy,
+    advancedSecurity: config.advancedSecurity,
+    itemExpirationDays: config.itemExpirationDays,
+    logRetentionDays: config.logRetentionDays,
   });
 
   const template = Template.fromStack(stack);
 
   test("creates a DynamoDB table with correct schema", () => {
     template.hasResourceProperties("AWS::DynamoDB::Table", {
-      TableName: testTableName,
+      TableName: config.tableName,
       KeySchema: [
         { AttributeName: "userID", KeyType: "HASH" }, // Partition key
         { AttributeName: "itemID", KeyType: "RANGE" }, // Sort key

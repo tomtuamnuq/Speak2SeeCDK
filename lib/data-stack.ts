@@ -5,7 +5,12 @@ import {
   Stack,
   StackProps,
 } from "aws-cdk-lib";
-import { BlockPublicAccess, Bucket, IBucket } from "aws-cdk-lib/aws-s3";
+import {
+  BlockPublicAccess,
+  Bucket,
+  BucketEncryption,
+  IBucket,
+} from "aws-cdk-lib/aws-s3";
 import {
   AttributeType,
   BillingMode,
@@ -13,11 +18,14 @@ import {
   ITable,
 } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
-import { ITEM_EXPIRATION_DAYS } from "./config/constants";
 
 interface DataStackProps extends StackProps {
   bucketName: string;
   tableName: string;
+  removalPolicy: RemovalPolicy;
+  advancedSecurity: boolean;
+  itemExpirationDays: number;
+  logRetentionDays: number;
 }
 
 export class DataStack extends Stack {
@@ -26,20 +34,30 @@ export class DataStack extends Stack {
 
   constructor(scope: Construct, id: string, props: DataStackProps) {
     super(scope, id, props);
-
     // Create the S3 bucket
     this.bucket = new Bucket(this, "S3Bucket", {
       bucketName: props.bucketName, // unique bucket name
-      removalPolicy: RemovalPolicy.DESTROY, // for simple recreation and testing purposes
-      autoDeleteObjects: true,
+      removalPolicy: props.removalPolicy,
+      autoDeleteObjects: props.removalPolicy === RemovalPolicy.DESTROY,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      encryption: BucketEncryption.S3_MANAGED,
       lifecycleRules: [
         {
           id: "optimize-storage-costs",
           enabled: true,
-          expiration: Duration.days(ITEM_EXPIRATION_DAYS),
+          expiration: Duration.days(props.itemExpirationDays),
         },
       ],
+      serverAccessLogsBucket: new Bucket(this, "AccessLogsBucket", {
+        enforceSSL: true,
+        encryption: BucketEncryption.S3_MANAGED,
+        lifecycleRules: [
+          {
+            expiration: Duration.days(props.logRetentionDays),
+          },
+        ],
+      }),
     });
 
     new CfnOutput(this, "BucketName", {
@@ -52,8 +70,9 @@ export class DataStack extends Stack {
       partitionKey: { name: "userID", type: AttributeType.STRING }, // Partition key: userID
       sortKey: { name: "itemID", type: AttributeType.STRING }, // key for common operations: itemID
       billingMode: BillingMode.PAY_PER_REQUEST, // On-demand pricing for scalability
-      removalPolicy: RemovalPolicy.DESTROY, // Automatically delete the table when the stack is destroyed
-      timeToLiveAttribute: "ttl", // Enable TTL
+      removalPolicy: props.removalPolicy,
+      timeToLiveAttribute: "ttl", // Enable TTL for item expiration
+      pointInTimeRecovery: props.advancedSecurity,
     });
 
     new CfnOutput(this, "TableName", {

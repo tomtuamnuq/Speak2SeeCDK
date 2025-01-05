@@ -7,6 +7,7 @@ import { DataStack } from "../lib/data-stack";
 import { ApiStack } from "../lib/api-stack";
 import { getConfig, stackName } from "../lib/config/environment-config";
 import { addProjectTags } from "../lib/tagging";
+import { addSecurityChecks } from "../lib/config/nag-config";
 
 const app = new App();
 
@@ -22,12 +23,18 @@ const env = {
 const dataStack = new DataStack(app, stackName("data", stage), {
   bucketName: config.bucketName,
   tableName: config.tableName,
+  removalPolicy: config.removalPolicy,
+  advancedSecurity: config.advancedSecurity,
+  itemExpirationDays: config.itemExpirationDays,
+  logRetentionDays: config.logRetentionDays,
   env,
 });
 addProjectTags(dataStack, config.tags);
 
 const authStack = new AuthStack(app, stackName("auth", stage), {
   userPoolName: config.userPoolName,
+  removalPolicy: config.removalPolicy,
+  advancedSecurity: config.advancedSecurity,
   env,
 });
 addProjectTags(authStack, config.tags);
@@ -35,6 +42,8 @@ addProjectTags(authStack, config.tags);
 const speak2SeeStack = new Speak2SeeCdkStack(app, stackName("core", stage), {
   bucket: dataStack.bucket,
   table: dataStack.table,
+  logRemovalPolicy: config.removalPolicy,
+  logRetentionDays: config.logRetentionDays,
   env,
 });
 addProjectTags(speak2SeeStack, config.tags);
@@ -47,6 +56,11 @@ const apiStack = new ApiStack(app, stackName("api", stage), {
   table: dataStack.table,
   stateMachineStandard: speak2SeeStack.stateMachineStandard,
   stateMachineExpress: speak2SeeStack.stateMachineExpress,
+  logRemovalPolicy: config.removalPolicy,
+  logRetentionDays: config.logRetentionDays,
+  itemExpirationDays: config.itemExpirationDays,
   env,
 });
 addProjectTags(apiStack, config.tags);
+
+addSecurityChecks(app, stage);

@@ -42,6 +42,8 @@ import { Text2Image } from "./workflow/bedrock";
 interface Speak2SeeProps extends StackProps {
   bucket: IBucket; // S3 bucket used for storing audio, transcriptions, and images.
   table: ITable; // DynamoDB table used for tracking processing status and metadata.
+  logRemovalPolicy: RemovalPolicy;
+  logRetentionDays: RetentionDays;
 }
 
 export class Speak2SeeCdkStack extends Stack {
@@ -59,6 +61,8 @@ export class Speak2SeeCdkStack extends Stack {
         BUCKET_NAME: props.bucket.bucketName,
         TABLE_NAME: props.table.tableName,
       },
+      memorySize: 128, // TODO set w.r.t. maximum file size of uploaded file and resulting transcription text
+      timeout: Duration.seconds(60),
     });
     // Define the Lambda task to process transcription
     const processingLambda = new NodejsFunction(this, "ImagePromptFunction", {
@@ -68,6 +72,8 @@ export class Speak2SeeCdkStack extends Stack {
       environment: {
         BUCKET_NAME: props.bucket.bucketName,
       },
+      memorySize: 128, // TODO set w.r.t. maximum file size of uploaded file and resulting transcription text
+      timeout: Duration.seconds(60),
     });
     const stateMachineRole = this.createStateMachineRole(
       props.bucket,
@@ -102,10 +108,11 @@ export class Speak2SeeCdkStack extends Stack {
       timeout: Duration.minutes(STANDARD_TIMEOUT_DURATION),
       logs: {
         destination: new LogGroup(this, "StateMachineLogsStandard", {
-          retention: RetentionDays.ONE_WEEK,
-          removalPolicy: RemovalPolicy.RETAIN,
+          retention: props.logRetentionDays,
+          removalPolicy: props.logRemovalPolicy,
         }),
-        level: LogLevel.ERROR,
+        includeExecutionData: false,
+        level: LogLevel.ALL,
       },
       tracingEnabled: false, // Disable X-Ray tracing (default)
     });
@@ -116,10 +123,11 @@ export class Speak2SeeCdkStack extends Stack {
       timeout: Duration.minutes(EXPRESS_TIMEOUT_DURATION),
       logs: {
         destination: new LogGroup(this, "StateMachineLogsExpress", {
-          retention: RetentionDays.ONE_DAY,
-          removalPolicy: RemovalPolicy.RETAIN,
+          retention: props.logRetentionDays,
+          removalPolicy: props.logRemovalPolicy,
         }),
-        level: LogLevel.ERROR, // Reduce logging costs by only logging errors
+        includeExecutionData: false,
+        level: LogLevel.ALL,
       },
       tracingEnabled: false, // Disable X-Ray tracing (default)
     });

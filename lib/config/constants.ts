@@ -21,5 +21,3 @@ export const STANDARD_TIMEOUT_DURATION = 15; // Workflow timeout in minutes
 export const EXPRESS_TIMEOUT_DURATION = 1; // Workflow timeout in minutes
 
 export const EXPRESS_SIZE_THRESHOLD = 10 * 1024 * 1024; // 10MB
-
-export const ITEM_EXPIRATION_DAYS = 5; // Items will be deleted after 5 days

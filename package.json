@@ -37,6 +37,7 @@
     "@smithy/util-stream": "^3.3.1",
     "@types/aws-lambda": "^8.10.145",
     "aws-cdk-lib": "2.164.1",
+    "cdk-nag": "^2.34.23",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
   }

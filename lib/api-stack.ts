@@ -1,4 +1,4 @@
-import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import {
   AccessLogFormat,
   AuthorizationType,
@@ -8,6 +8,7 @@ import {
   LambdaIntegration,
   LogGroupLogDestination,
   MethodLoggingLevel,
+  RequestValidator,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import { IUserPool } from "aws-cdk-lib/aws-cognito";
@@ -19,7 +20,7 @@ import { join } from "path";
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { IStateMachine } from "aws-cdk-lib/aws-stepfunctions";
-import { LogGroup } from "aws-cdk-lib/aws-logs";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 
 interface ApiStackProps extends StackProps {
   restApiName: string;
@@ -29,6 +30,9 @@ interface ApiStackProps extends StackProps {
   table: ITable;
   stateMachineStandard: IStateMachine;
   stateMachineExpress: IStateMachine;
+  logRemovalPolicy: RemovalPolicy;
+  logRetentionDays: RetentionDays;
+  itemExpirationDays: number;
 }
 
 export class ApiStack extends Stack {
@@ -42,7 +46,10 @@ export class ApiStack extends Stack {
 
     // Create CloudWatch Log Group
     const logDestination = new LogGroupLogDestination(
-      new LogGroup(this, "ApiGatewayAccessLogs")
+      new LogGroup(this, "ApiGatewayAccessLogs", {
+        removalPolicy: props.logRemovalPolicy,
+        retention: props.logRetentionDays,
+      })
     );
 
     // Create a Cognito User Pool Authorizer to secure the API
@@ -74,14 +81,23 @@ export class ApiStack extends Stack {
       deployOptions: {
         stageName: props.stage,
         metricsEnabled: true,
-        loggingLevel: MethodLoggingLevel.INFO,
+        loggingLevel: MethodLoggingLevel.ERROR,
         dataTraceEnabled: false, // see StepFunction state instead
         accessLogDestination: logDestination,
         accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
         throttlingBurstLimit: 10, // 10 requests per second at most
-        throttlingRateLimit: 1, // Only 1 concurrent request
+        throttlingRateLimit: 1, // Only 1 concurrent request TODO production
       },
     });
+    const requestValidator = new RequestValidator(
+      this,
+      "ApiGatewayRequestValidator",
+      {
+        restApi: this.api,
+        validateRequestBody: true,
+        validateRequestParameters: true,
+      }
+    );
 
     const uploadLambda = this.createLambda("UploadFunction", "upload.ts");
     // Attach specific permissions for S3 and DynamoDB to the Lambda function's IAM role
@@ -149,6 +165,7 @@ export class ApiStack extends Stack {
           this.props.stateMachineStandard.stateMachineArn,
         STATE_MACHINE_EXPRESS_ARN:
           this.props.stateMachineExpress.stateMachineArn,
+        ITEM_EXPIRATION_DAYS: this.props.itemExpirationDays.toString(),
       },
     });
   }

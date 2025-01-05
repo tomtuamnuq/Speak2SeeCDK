@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
 import {
+  calculateTTL,
   DynamoDBTableSchema,
   getBucketName,
   getTableName,
@@ -85,4 +86,19 @@ export function getStateMachineArn(useExpress: boolean): string {
     );
   }
   return stateMachineArn;
+}
+
+/**
+ * Retrieves the item expiration days from environment variables.
+ * @throws Error if ITEM_EXPIRATION_DAYS is not defined.
+ * @returns The number of days until an item gets deleted.
+ */
+export function getItemExpirationDays(): number {
+  const itemExpirationDays = process.env.ITEM_EXPIRATION_DAYS;
+  if (!itemExpirationDays) {
+    throw new Error(
+      "Number of days for keeping records in DynamoDB is not specified in environment variables!"
+    );
+  }
+  return Number(itemExpirationDays);
 }

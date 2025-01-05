@@ -11,6 +11,7 @@ import {
   projectTableItem,
   getEnvironment,
   getStateMachineArn,
+  getItemExpirationDays,
 } from "./api-utils";
 import {
   calculateTTL,
@@ -25,7 +26,6 @@ import { SFN } from "@aws-sdk/client-sfn";
 const s3 = new S3();
 const sfn = new SFN();
 const dynamoDb = new DynamoDB();
-
 /**
  * Lambda function to handle file uploads, start a Step Function workflow, and create a DynamoDB entry.
  * @param event - The API Gateway event containing the upload request and audio file data.
@@ -38,7 +38,7 @@ async function handler(
 ): Promise<APIGatewayProxyResult> {
   try {
     const { bucketName, tableName, userID } = getEnvironment(event);
-
+    const itemExpirationDays = getItemExpirationDays();
     // Get the audio file from the request body (binary data)
     const body = event.body;
     const isBase64Encoded = event.isBase64Encoded;
@@ -97,7 +97,7 @@ async function handler(
       userID: userID,
       itemID: prefix,
       createdAt: createdAt,
-      expireAt: calculateTTL(createdAt),
+      expireAt: calculateTTL(createdAt, itemExpirationDays),
       executionID: startWorkflowResult.executionArn,
       processingStatus: ProcessingStatus.IN_PROGRESS,
     };

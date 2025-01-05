@@ -4,11 +4,7 @@
  */
 
 import { __MetadataBearer } from "@aws-sdk/client-s3";
-import {
-  AUDIO_FILENAME,
-  IMAGE_FILENAME,
-  ITEM_EXPIRATION_DAYS,
-} from "./config/constants";
+import { AUDIO_FILENAME, IMAGE_FILENAME } from "./config/constants";
 
 /**
  * Generates the S3 key for the audio file.
@@ -73,9 +69,12 @@ export interface DynamoDBTableSchema {
  * @returns The expireAt time (ITEM_EXPIRATION_DAYS from now) in epoch second format
  *
  */
-export function calculateTTL(currentTime: number): number {
+export function calculateTTL(
+  currentTime: number,
+  itemExpirationDays: number
+): number {
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-before-you-start.html
-  return currentTime + ITEM_EXPIRATION_DAYS * 24 * 60 * 60;
+  return currentTime + itemExpirationDays * 24 * 60 * 60;
 }
 
 /**

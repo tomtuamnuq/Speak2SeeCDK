@@ -1,13 +1,12 @@
 import { Template, Match } from "aws-cdk-lib/assertions";
-import { App } from "aws-cdk-lib";
+import { App, RemovalPolicy } from "aws-cdk-lib";
 import { ApiStack } from "../../lib/api-stack";
 import { AuthStack } from "../../lib/auth-stack";
 import { DataStack } from "../../lib/data-stack";
 import { Speak2SeeCdkStack } from "../../lib/speak2_see_cdk-stack";
+import { getConfig } from "../../lib/config/environment-config";
 
-const bucketName = "test-bucket";
-const tableName = "test-table";
-
+const config = getConfig("prod");
 describe("ApiStack", () => {
   let app: App;
   let template: Template;
@@ -17,26 +16,37 @@ describe("ApiStack", () => {
 
     // Create dependent stacks
     const authStack = new AuthStack(app, "TestAuthStack", {
-      userPoolName: "test-users",
+      userPoolName: config.userPoolName,
+      removalPolicy: config.removalPolicy,
+      advancedSecurity: config.advancedSecurity,
     });
     const dataStack = new DataStack(app, "TestDataStack", {
-      bucketName,
-      tableName,
+      bucketName: config.bucketName,
+      tableName: config.tableName,
+      removalPolicy: config.removalPolicy,
+      advancedSecurity: config.advancedSecurity,
+      itemExpirationDays: config.itemExpirationDays,
+      logRetentionDays: config.logRetentionDays,
     });
     const workflowStack = new Speak2SeeCdkStack(app, "TestWorkflowStack", {
       bucket: dataStack.bucket,
       table: dataStack.table,
+      logRemovalPolicy: config.removalPolicy,
+      logRetentionDays: config.logRetentionDays,
     });
 
     // Create the ApiStack
     const stack = new ApiStack(app, "TestApiStack", {
-      restApiName: "test-endpoint",
+      restApiName: config.restApiName,
       stage: "test",
       userPool: authStack.userPool,
       bucket: dataStack.bucket,
       table: dataStack.table,
       stateMachineStandard: workflowStack.stateMachineStandard,
       stateMachineExpress: workflowStack.stateMachineExpress,
+      logRemovalPolicy: config.removalPolicy,
+      logRetentionDays: config.logRetentionDays,
+      itemExpirationDays: config.itemExpirationDays,
     });
 
     template = Template.fromStack(stack);

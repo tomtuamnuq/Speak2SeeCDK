@@ -1,4 +1,4 @@
-import { App } from "aws-cdk-lib";
+import { App, RemovalPolicy } from "aws-cdk-lib";
 import { AuthStack } from "../../lib/auth-stack";
 import { Match, Template } from "aws-cdk-lib/assertions";
 const userPoolName = "test-users";
@@ -9,7 +9,11 @@ describe("AuthStack", () => {
 
   beforeEach(() => {
     app = new App();
-    stack = new AuthStack(app, "TestAuthStack", { userPoolName: userPoolName });
+    stack = new AuthStack(app, "TestAuthStack", {
+      userPoolName: userPoolName,
+      removalPolicy: RemovalPolicy.RETAIN,
+      advancedSecurity: true,
+    });
     template = Template.fromStack(stack);
   });
 
@@ -19,11 +23,11 @@ describe("AuthStack", () => {
       AutoVerifiedAttributes: ["email"],
       Policies: {
         PasswordPolicy: {
-          MinimumLength: 8,
+          MinimumLength: 12,
           RequireLowercase: true,
           RequireUppercase: true,
           RequireNumbers: true,
-          RequireSymbols: false,
+          RequireSymbols: true,
         },
       },
     });

@@ -28,6 +28,7 @@ describe("Upload Lambda Function", () => {
     process.env.TABLE_NAME = mockTable;
     process.env.STATE_MACHINE_STANDARD_ARN = "mock-state-machine-standard";
     process.env.STATE_MACHINE_EXPRESS_ARN = "mock-state-machine-express";
+    process.env.ITEM_EXPIRATION_DAYS = "1";
   });
 
   test("uploads audio to S3, starts the workflow, and adds a valid item to DynamoDB", async () => {
