@@ -62,7 +62,7 @@ export class Speak2SeeCdkStack extends Stack {
     const processingLambda = new NodejsFunction(this, "ComprehendFunction", {
       runtime: Runtime.NODEJS_20_X,
       handler: "handler",
-      entry: join(__dirname, "workflow", "comprehend.ts"),
+      entry: join(__dirname, "workflow", "image-prompt.ts"),
       environment: {
         BUCKET_NAME: props.bucket.bucketName,
       },
@@ -264,8 +264,12 @@ export class Speak2SeeCdkStack extends Stack {
     // Grant the text processing Lambda function permissions
     processingLambda.addToRolePolicy(
       new PolicyStatement({
-        actions: ["comprehend:DetectKeyPhrases"],
-        resources: ["*"], // TODO restrict
+        actions: ["bedrock:InvokeModel"],
+        resources: [
+          `arn:aws:bedrock:${
+            Stack.of(this).region
+          }::foundation-model/amazon.titan-text-express-v1`,
+        ],
       })
     );
     processingLambda.addToRolePolicy(
