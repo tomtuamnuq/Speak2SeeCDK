@@ -26,7 +26,7 @@ const apiEndpoint: string = outputs[stackName("api", stage)].ApiEndpoint;
 const userPoolId: string = outputs[userPoolStackName].UserPoolId;
 const userPoolClientId: string = outputs[userPoolStackName].UserPoolClientId;
 
-const testAudioFilePath = join(__dirname, "resources", "audio_long.wav");
+const testAudioFilePath = join(__dirname, "resources", "audio.wav");
 const email = process.env.EMAIL!;
 const username = process.env.USERNAME!;
 const password = process.env.PASSWORD!;

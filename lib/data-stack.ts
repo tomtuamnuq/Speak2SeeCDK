@@ -45,8 +45,8 @@ export class DataStack extends Stack {
       lifecycleRules: [
         {
           id: "optimize-storage-costs",
-          enabled: true,
           expiration: Duration.days(props.itemExpirationDays),
+          abortIncompleteMultipartUploadAfter: Duration.days(1),
         },
       ],
       serverAccessLogsBucket: new Bucket(this, "AccessLogsBucket", {

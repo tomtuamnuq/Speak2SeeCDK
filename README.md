@@ -6,12 +6,12 @@ Speak2See is an AWS-based workflow for transforming an uploaded audio file into 
 
 1. Accepts an uploaded `.wav` audio file via a REST API.
 2. Uses Amazon Transcribe to convert speech to text.
-3. Extracts key phrases with Amazon Comprehend.
-4. Uses the extracted phrases as a prompt for Amazon Bedrock Titan model to generate an image.
+3. Leverages Amazon Bedrock's Titan Text Express model to generate an optimized image generation prompt from the transcription.
+4. Uses the generated prompt with Amazon Bedrock's Titan Image Generator to create an image.
 5. Stores results (transcription, prompt, and image) in Amazon S3 and DynamoDB.
 6. Allows retrieval of both in-progress and finished results via API endpoints.
 
-The infrastructure is built with the AWS CDK, defining stacks for authentication (Cognito), data storage (S3, DynamoDB), workflow orchestration (Step Functions), and API integration (API Gateway + Lambda).
+The infrastructure is built with the AWS CDK, defining stacks for authentication (Cognito), data storage (S3, DynamoDB), workflow orchestration (Step Functions Express), and API integration (API Gateway + Lambda). The solution implements Express state machines to optimize costs for shorter-duration, higher-volume workloads, while maintaining AWS Solutions security best practices through `cdk-nag`.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ The infrastructure is built with the AWS CDK, defining stacks for authentication
 
 - **AuthStack**: Creates a Cognito User Pool and Client for user authentication.
 - **DataStack**: Creates the S3 bucket for audio/image files and the DynamoDB table that tracks processing items.
-- **Speak2SeeCdkStack**: Defines the workflow (Step Functions), integrating Transcribe, Comprehend, and Bedrock tasks. Also configures Lambda functions to finalize and manage results, and updates the DynamoDB table.
+- **Speak2SeeCdkStack**: Defines the workflow (Step Functions), integrating Transcribe, and Bedrock tasks. Also configures Lambda functions to finalize and manage results, and updates the DynamoDB table.
 - **ApiStack**: Integrates API Gateway with Lambda functions for `/upload`, `/getAll`, and `/get/{itemID}` endpoints, using Cognito for authentication.
 
 ### Workflow Parts
@@ -28,11 +28,13 @@ The infrastructure is built with the AWS CDK, defining stacks for authentication
 
   - Orchestrates Amazon Transcribe calls and waits until transcription is complete.
   - On success, proceeds to further processing steps; on failure, updates status in DynamoDB to `TRANSCRIPTION_FAILED`.
+  - Implements polling with Express state machine for cost-efficient execution.
 
-- **comprehend Lambda (lib/workflow/comprehend.ts)**:
+- **image-prompt Lambda (lib/workflow/image-prompt.ts)**:
 
-  - Processes the transcription text, calls Comprehend to extract key phrases.
-  - Limits key phrases, handles failures by falling back to truncated transcription.
+  - Processes the transcription text using Amazon Bedrock's Titan Text Express model.
+  - Generates an optimized image prompt that captures key visual elements and mood.
+  - Handles failures by falling back to truncated transcription text.
 
 - **Text2Image Construct (lib/workflow/bedrock.ts)**:
 
@@ -79,7 +81,7 @@ The project includes extensive unit and integration tests:
 - **upload test (test/unit/api/upload.test.ts)** checks S3, Step Functions start execution, and DynamoDB creation.
 - **getAll test (test/unit/api/getAll.test.ts)** checks DynamoDB query and returned structure.
 - **get test (test/unit/api/get.test.ts)** validates behavior for `FINISHED` vs non-finished items.
-- **comprehend test (test/unit/workflow/comprehend.test.ts)** ensures transcription processing and key phrase extraction logic.
+- **image-prompt test (test/unit/workflow/image-prompt.test.ts)** ensures transcription processing and prompt generation.
 - **finalize test (test/unit/workflow/finalize.test.ts)** ensures final step updates DynamoDB and saves image.
 - **transcribe test (test/unit/workflow/transcribe.test.ts)** verifies the Step Functions fragment for transcription logic.
 - **Text2Image test (test/unit/workflow/bedrock.test.ts)** checks the Bedrock image generation task configuration.
