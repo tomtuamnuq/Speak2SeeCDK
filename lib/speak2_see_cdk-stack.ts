@@ -26,9 +26,16 @@ import {
 import {
   EXPRESS_TIMEOUT_DURATION,
   EXPRESS_TRANSCRIBE_POLLING_INTERVAL,
+  LAMBDA_MEMORY_SIZE,
+  LAMBDA_TIMEOUT,
 } from "./config/constants";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
+import {
+  ApplicationLogLevel,
+  LoggingFormat,
+  Runtime,
+  SystemLogLevel,
+} from "aws-cdk-lib/aws-lambda";
 import { join } from "path";
 import {
   DynamoAttributeValue,
@@ -58,8 +65,17 @@ export class Speak2SeeCdkStack extends Stack {
         BUCKET_NAME: props.bucket.bucketName,
         TABLE_NAME: props.table.tableName,
       },
-      memorySize: 128, // TODO set w.r.t. maximum file size of uploaded file and resulting transcription text
-      timeout: Duration.seconds(20),
+      description:
+        "Retrieves the generated image from S3 and uploads it to a separate S3 location. Updates the DynamoDB entry with the transcription, prompt, and processing status.",
+      logGroup: new LogGroup(this, "FinalFunction-Logs", {
+        removalPolicy: props.logRemovalPolicy,
+        retention: props.logRetentionDays,
+      }),
+      loggingFormat: LoggingFormat.JSON,
+      systemLogLevelV2: SystemLogLevel.INFO,
+      applicationLogLevelV2: ApplicationLogLevel.ERROR,
+      memorySize: LAMBDA_MEMORY_SIZE,
+      timeout: LAMBDA_TIMEOUT,
     });
     // Define the Lambda task to process transcription
     const processingLambda = new NodejsFunction(this, "ImagePromptFunction", {
@@ -69,8 +85,17 @@ export class Speak2SeeCdkStack extends Stack {
       environment: {
         BUCKET_NAME: props.bucket.bucketName,
       },
-      memorySize: 128, // TODO set w.r.t. maximum file size of uploaded file and resulting transcription text
-      timeout: Duration.seconds(20),
+      description:
+        "Generates an optimized image prompt from the transcription.",
+      logGroup: new LogGroup(this, "ImagePromptFunction-Logs", {
+        removalPolicy: props.logRemovalPolicy,
+        retention: props.logRetentionDays,
+      }),
+      loggingFormat: LoggingFormat.JSON,
+      systemLogLevelV2: SystemLogLevel.INFO,
+      applicationLogLevelV2: ApplicationLogLevel.INFO,
+      memorySize: 128, // tested with 1200 character transcription and 512 character long prompt
+      timeout: Duration.seconds(20), // accounts for bedrock foundation model invocation delay
     });
     const stateMachineRole = this.createStateMachineRole(
       props.bucket,
@@ -84,8 +109,7 @@ export class Speak2SeeCdkStack extends Stack {
       props.table,
       processingLambda,
       finalLambda,
-      EXPRESS_TRANSCRIBE_POLLING_INTERVAL,
-      (id) => `${id}-Express`
+      EXPRESS_TRANSCRIBE_POLLING_INTERVAL
     );
     transcribeWorkflowExpress.addPermissions(stateMachineRole);
 
@@ -95,7 +119,7 @@ export class Speak2SeeCdkStack extends Stack {
       stateMachineType: StateMachineType.EXPRESS,
       timeout: Duration.minutes(EXPRESS_TIMEOUT_DURATION),
       logs: {
-        destination: new LogGroup(this, "StateMachineLogs", {
+        destination: new LogGroup(this, "StateMachine-Logs", {
           retention: props.logRetentionDays,
           removalPolicy: props.logRemovalPolicy,
         }),
@@ -111,10 +135,9 @@ export class Speak2SeeCdkStack extends Stack {
     table: ITable,
     processingLambda: NodejsFunction,
     finalLambda: NodejsFunction,
-    transcribePollingInterval: number,
-    idCallback: (id: string) => string
+    transcribePollingInterval: number
   ): TranscribeWorkflow {
-    const text2Image = new Text2Image(this, idCallback("Text2Image"), {
+    const text2Image = new Text2Image(this, "Text2Image", {
       bucketName: bucketName,
       prefix: JsonPath.stringAt("$.prefix"),
       prompt: JsonPath.stringAt("$.transcription.prompt"),
@@ -125,7 +148,7 @@ export class Speak2SeeCdkStack extends Stack {
       transcription: JsonPath.stringAt("$.transcription.text"),
       prompt: JsonPath.stringAt("$.transcription.prompt"),
     };
-    const finalTask = new LambdaInvoke(this, idCallback("FinalTask"), {
+    const finalTask = new LambdaInvoke(this, "FinalTask", {
       lambdaFunction: finalLambda,
       payload: TaskInput.fromObject(finalLambdaInput),
       resultPath: JsonPath.DISCARD, // returns void
@@ -135,7 +158,7 @@ export class Speak2SeeCdkStack extends Stack {
     };
     const processTranscriptionTask = new LambdaInvoke(
       this,
-      idCallback("ProcessTranscriptionTask"),
+      "ProcessTranscriptionTask",
       {
         lambdaFunction: processingLambda,
         payload: TaskInput.fromObject(processingLambdaInput),
@@ -150,7 +173,7 @@ export class Speak2SeeCdkStack extends Stack {
     // Define the Image Generation workflow
     const handleImageGenerationFailure = new DynamoUpdateItem(
       this,
-      idCallback("UpdateImageGenerationFailure"),
+      "UpdateImageGenerationFailure",
       {
         table: table,
         key: {
@@ -179,7 +202,7 @@ export class Speak2SeeCdkStack extends Stack {
     // Define the Image Generation workflow
     const handleTranscriptionFailure = new DynamoUpdateItem(
       this,
-      idCallback("UpdateTranscriptionFailure"),
+      "UpdateTranscriptionFailure",
       {
         table: table,
         key: {
@@ -213,7 +236,7 @@ export class Speak2SeeCdkStack extends Stack {
         })
       );
 
-    return new TranscribeWorkflow(this, idCallback("TranscribeWorkflow"), {
+    return new TranscribeWorkflow(this, "TranscribeWorkflow", {
       bucketName: bucketName,
       prefix: JsonPath.stringAt("$.input.prefix"),
       transcriptionCompleted: processTranscriptionTask,

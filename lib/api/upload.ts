@@ -21,6 +21,7 @@ import {
   requestFailed,
 } from "../utils";
 import { SFN } from "@aws-sdk/client-sfn";
+import { MAX_BINARY_AUDIO_SIZE } from "../config/constants";
 
 const s3 = new S3();
 const sfn = new SFN();
@@ -41,7 +42,6 @@ async function handler(
     // Get the audio file from the request body (binary data)
     const body = event.body;
     const isBase64Encoded = event.isBase64Encoded;
-
     if (!body) {
       return createAPIGatewayResult(
         400,
@@ -49,11 +49,19 @@ async function handler(
       );
     }
 
-    // Generate a UUID as directory name (S3 prefix)
-    const prefix = randomUUID();
     // Decode the base64-encoded binary data
     const audioBuffer = Buffer.from(body, isBase64Encoded ? "base64" : "utf-8");
+    if (audioBuffer.length > MAX_BINARY_AUDIO_SIZE) {
+      return createAPIGatewayResult(
+        413,
+        JSON.stringify({
+          message: `File too large. Maximum size is 3MB (approximately 1 minute).`,
+        })
+      );
+    }
     const stateMachineArn = getStateMachineArn();
+    // Generate a UUID as directory name (S3 prefix)
+    const prefix = randomUUID();
     // Upload the audio file to S3
     const putObjectResult = await s3.putObject({
       Bucket: bucketName,

@@ -1,4 +1,10 @@
-import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
+import {
+  CfnOutput,
+  Duration,
+  RemovalPolicy,
+  Stack,
+  StackProps,
+} from "aws-cdk-lib";
 import {
   AccessLogFormat,
   AuthorizationType,
@@ -13,7 +19,12 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { IUserPool } from "aws-cdk-lib/aws-cognito";
 import { IBucket } from "aws-cdk-lib/aws-s3";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
+import {
+  ApplicationLogLevel,
+  LoggingFormat,
+  Runtime,
+  SystemLogLevel,
+} from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 import { join } from "path";
@@ -21,6 +32,7 @@ import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { IStateMachine } from "aws-cdk-lib/aws-stepfunctions";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { LAMBDA_MEMORY_SIZE, LAMBDA_TIMEOUT } from "./config/constants";
 
 interface ApiStackProps extends StackProps {
   restApiName: string;
@@ -42,15 +54,6 @@ export class ApiStack extends Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
     this.props = props;
-
-    // Create CloudWatch Log Group
-    const logDestination = new LogGroupLogDestination(
-      new LogGroup(this, "ApiGatewayAccessLogs", {
-        removalPolicy: props.logRemovalPolicy,
-        retention: props.logRetentionDays,
-      })
-    );
-
     // Create a Cognito User Pool Authorizer to secure the API
     this.authorizer = new CognitoUserPoolsAuthorizer(this, "ApiAuthorizer", {
       cognitoUserPools: [props.userPool],
@@ -82,10 +85,12 @@ export class ApiStack extends Stack {
         metricsEnabled: true,
         loggingLevel: MethodLoggingLevel.ERROR,
         dataTraceEnabled: false, // see StepFunction state instead
-        accessLogDestination: logDestination,
+        accessLogDestination: new LogGroupLogDestination(
+          this.createLogGroup("ApiGateway-Logs")
+        ),
         accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
-        throttlingBurstLimit: 10, // 10 requests per second at most
-        throttlingRateLimit: 1, // Only 1 concurrent request TODO production
+        throttlingBurstLimit: 10, // 10 (concurrent) requests per second at most
+        throttlingRateLimit: 10, //
       },
     });
     const requestValidator = new RequestValidator(
@@ -98,7 +103,11 @@ export class ApiStack extends Stack {
       }
     );
 
-    const uploadLambda = this.createLambda("UploadFunction", "upload.ts");
+    const uploadLambda = this.createLambda(
+      "UploadFunction",
+      "upload.ts",
+      "Lambda function to handle file uploads, start a Step Function workflow, and create a DynamoDB entry."
+    );
     // Attach specific permissions for S3 and DynamoDB to the Lambda function's IAM role
     uploadLambda.addToRolePolicy(
       new PolicyStatement({
@@ -115,7 +124,11 @@ export class ApiStack extends Stack {
     );
     this.createRoute(uploadLambda, "upload", "POST", this.api.root);
 
-    const getAllLambda = this.createLambda("GetAllFunction", "getAll.ts");
+    const getAllLambda = this.createLambda(
+      "GetAllFunction",
+      "getAll.ts",
+      "Lambda function to retrieve all processing items for a specific user."
+    );
     // Attach specific permission for DynamoDB to the Lambda function's IAM role
     getAllLambda.addToRolePolicy(
       new PolicyStatement({
@@ -124,8 +137,11 @@ export class ApiStack extends Stack {
       })
     );
     this.createRoute(getAllLambda, "getAll", "GET", this.api.root);
-
-    const getLambda = this.createLambda("GetFunction", "get.ts");
+    const getLambda = this.createLambda(
+      "GetFunction",
+      "get.ts",
+      "Handles requests to retrieve processing results by item ID."
+    );
     // Attach specific permissions for S3 and DynamoDB to the Lambda function's IAM role
     getLambda.addToRolePolicy(
       new PolicyStatement({
@@ -151,7 +167,14 @@ export class ApiStack extends Stack {
       value: this.api.url,
     });
   }
-  private createLambda(id: string, file: string) {
+  private createLogGroup(id: string) {
+    return new LogGroup(this, id, {
+      removalPolicy: this.props.logRemovalPolicy,
+      retention: this.props.logRetentionDays,
+    });
+  }
+
+  private createLambda(id: string, file: string, description: string) {
     return new NodejsFunction(this, id, {
       runtime: Runtime.NODEJS_20_X,
       handler: "handler",
@@ -162,6 +185,13 @@ export class ApiStack extends Stack {
         STATE_MACHINE_ARN: this.props.stateMachine.stateMachineArn,
         ITEM_EXPIRATION_DAYS: this.props.itemExpirationDays.toString(),
       },
+      description: description,
+      logGroup: this.createLogGroup(`${id}-Logs`),
+      loggingFormat: LoggingFormat.JSON,
+      systemLogLevelV2: SystemLogLevel.INFO,
+      applicationLogLevelV2: ApplicationLogLevel.ERROR,
+      memorySize: LAMBDA_MEMORY_SIZE,
+      timeout: LAMBDA_TIMEOUT,
     });
   }
   private createRoute(

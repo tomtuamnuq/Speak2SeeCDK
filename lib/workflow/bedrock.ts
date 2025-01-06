@@ -5,7 +5,7 @@ import {
 import { JsonPath, TaskInput } from "aws-cdk-lib/aws-stepfunctions";
 import { BedrockInvokeModel } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
-import { TEXT2IMG_RESULT_FILENAME } from "../config/constants";
+import { IMAGE_SIZE, TEXT2IMG_RESULT_FILENAME } from "../config/constants";
 
 interface Text2ImageConfig {
   taskType: "TEXT_IMAGE";
@@ -58,8 +58,8 @@ export class Text2Image extends Construct {
       },
       imageGenerationConfig: {
         numberOfImages: 1,
-        height: 768,
-        width: 768,
+        height: IMAGE_SIZE,
+        width: IMAGE_SIZE,
         cfgScale: 8.0, // 1.1 - 10.0 Default 8.0
         seed: 42,
       },

@@ -55,6 +55,7 @@ The infrastructure is built with the AWS CDK, defining stacks for authentication
 - **`POST /upload`**:
 
   - Uploads an audio file to S3 and starts a Step Functions workflow.
+  - Size of the audio file is limited to 3 MB.
   - Returns a unique ID, creation timestamp, and initial processing status.
   - Creates a DynamoDB item with status `IN_PROGRESS`.
 
@@ -65,6 +66,7 @@ The infrastructure is built with the AWS CDK, defining stacks for authentication
 - **`GET /get/{itemID}`**:
 
   - Returns the audio file, and for completed items, the generated image, transcription, and prompt.
+  - Keeps the total size under the 6MB lambda response limit: 3MB audio + 1MB image + 100KB text (considering base64 encoding)
   - Handles failed or incomplete items gracefully, returning only the available data.
 
 ## Testing
