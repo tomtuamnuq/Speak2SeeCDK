@@ -6,12 +6,12 @@ import {
   Context,
 } from "aws-lambda";
 import { createAPIGatewayResult, getEnvironment } from "./api-utils";
+import { getAudioKey, getImageKey } from "../utils";
 import {
-  getAudioKey,
-  getImageKey,
   ProcessingStatus,
   transcriptionHasNotBeenCreated,
-} from "../utils";
+} from "../../shared/common-utils";
+import { ItemDetails } from "../../shared/types";
 
 const s3 = new S3();
 const dynamoDb = new DynamoDB();
@@ -79,16 +79,14 @@ async function handler(
     if (processingStatus === ProcessingStatus.FINISHED) {
       imageBlob = await getS3Blob(bucketName, getImageKey(itemID));
     }
-    return createAPIGatewayResult(
-      200,
-      JSON.stringify({
-        audio: audioBlob,
-        image: imageBlob,
-        transcription: transcription,
-        prompt: prompt,
-        processingStatus: processingStatus,
-      })
-    );
+    const getResponse: ItemDetails = {
+      audio: audioBlob,
+      image: imageBlob,
+      transcription: transcription,
+      prompt: prompt,
+      processingStatus: processingStatus,
+    };
+    return createAPIGatewayResult(200, JSON.stringify(getResponse));
   } catch (error) {
     console.error("Error processing request:", error);
     return createAPIGatewayResult(

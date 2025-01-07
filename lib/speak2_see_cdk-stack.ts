@@ -18,11 +18,8 @@ import {
   TaskInput,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
-import {
-  FinalLambdaInput,
-  ProcessingLambdaInput,
-  ProcessingStatus,
-} from "./utils";
+import { FinalLambdaInput, ProcessingLambdaInput } from "./utils";
+import { ProcessingStatus } from "../shared/common-utils";
 import {
   EXPRESS_TIMEOUT_DURATION,
   EXPRESS_TRANSCRIBE_POLLING_INTERVAL,

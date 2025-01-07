@@ -3,7 +3,7 @@ import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/upload";
-import { ProcessingStatus } from "../../../lib/utils";
+import { ProcessingStatus } from "../../../shared/common-utils";
 
 // Mock AWS SDK clients
 const s3Mock = mockClient(S3Client);

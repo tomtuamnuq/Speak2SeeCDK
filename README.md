@@ -107,7 +107,7 @@ npm test -- test/unit
   - Uses `axios` to call `/upload`, `/getAll`, `/get/{itemID}` endpoints.
   - Validates that finished items return all fields as truthy and unfinished items return at least audio and processingStatus.
 
-Set `USERNAME`, `PASSWORD`, and `EMAIL` in a `.env` file for integration tests (in `/test/integration/.env`). Ensure that the deployment outputs exist in `test/integration/outputs.json`.
+Set `USERNAME`, `PASSWORD`, and `EMAIL` in a `.env` file for integration tests (in `/test/integration/.env`). Ensure that the deployment outputs exist in `shared/outputs-dev.json`.
 
 Run the integration tests:
 
@@ -132,19 +132,4 @@ npm run diff:dev
 npm run destroy:dev
 ```
 
-For integration testing, the `dev` deployment outputs are written to `./test/integration/outputs.json`.
-
-### Production Environment
-
-```bash
-# Deploy production stack
-npm run deploy:prod
-
-# Review changes before deployment
-npm run diff:prod
-
-# Destroy production stack
-npm run destroy:prod
-```
-
-Production outputs are written to `./outputs.json`.
+For integration testing, the `dev` deployment outputs are written to `./shared/outputs-dev.json`.

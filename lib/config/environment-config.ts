@@ -19,11 +19,6 @@ export interface EnvironmentConfig {
   };
 }
 
-// Create stacks with environment-specific naming
-export function stackName(baseName: string, stage: string) {
-  return `speak2see-${baseName}-${stage}`;
-}
-
 export function getConfig(stage: string): EnvironmentConfig {
   const defaultConfig = {
     project: "Speak2See",

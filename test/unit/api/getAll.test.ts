@@ -1,7 +1,7 @@
 import { handler } from "../../../lib/api/getAll";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { ProcessingStatus } from "../../../lib/utils";
+import { ProcessingStatus } from "../../../shared/common-utils";
 
 const dynamoDbMock = mockClient(DynamoDBClient);
 
@@ -25,9 +25,14 @@ describe("Retrieve itemIDs Lambda Function", () => {
     const mockQueryResult = {
       $metadata: { httpStatusCode: 200 },
       Items: [
-        { itemID: { S: "itemID-1" }, processingStatus: { S: "in progress" } },
+        {
+          itemID: { S: "itemID-1" },
+          createdAt: { N: "1234" },
+          processingStatus: { S: "in progress" },
+        },
         {
           itemID: { S: "itemID-2" },
+          createdAt: { N: "12345" },
           processingStatus: { S: "image generation failed" },
         },
       ],
@@ -40,8 +45,16 @@ describe("Retrieve itemIDs Lambda Function", () => {
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
       itemIDs: [
-        { id: "itemID-1", processingStatus: ProcessingStatus.IN_PROGRESS },
-        { id: "itemID-2", processingStatus: ProcessingStatus.IMAGE_FAILED },
+        {
+          id: "itemID-1",
+          createdAt: 1234,
+          processingStatus: ProcessingStatus.IN_PROGRESS,
+        },
+        {
+          id: "itemID-2",
+          createdAt: 12345,
+          processingStatus: ProcessingStatus.IMAGE_FAILED,
+        },
       ],
     });
 

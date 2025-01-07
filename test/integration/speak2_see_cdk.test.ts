@@ -9,16 +9,19 @@ import {
 import * as dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { ProcessingStatus } from "../../lib/utils";
-import { ProjectionResult } from "../../lib/api/getAll";
-import { stackName } from "../../lib/config/environment-config";
+import { ProcessingStatus } from "../../shared/common-utils";
+import { stackName } from "../../shared/common-utils";
+import { ProcessingItem } from "../../shared/types";
 
 dotenv.config({
   path: join(__dirname, ".env"),
 });
 
 const outputs = JSON.parse(
-  readFileSync(join(__dirname, "outputs.json"), "utf-8")
+  readFileSync(
+    join(__dirname, "..", "..", "shared", "outputs-dev.json"),
+    "utf-8"
+  )
 );
 const stage = "dev";
 const userPoolStackName = stackName("auth", stage);
@@ -136,7 +139,7 @@ describe("Integration Test: Speak2See REST API", () => {
     });
 
     // Assertions for /getAll
-    const itemIDs: ProjectionResult[] = getAllResponse.data.itemIDs;
+    const itemIDs: ProcessingItem[] = getAllResponse.data.itemIDs;
     expect(itemIDs.length).toBeGreaterThan(1);
 
     // Find items with finished and not finished statuses

@@ -1,11 +1,7 @@
 import { GetObjectCommandInput, S3 } from "@aws-sdk/client-s3";
 import { Context } from "aws-lambda";
-import {
-  FinalLambdaInput,
-  getImageKey,
-  ProcessingStatus,
-  requestFailed,
-} from "../utils";
+import { FinalLambdaInput, getImageKey, requestFailed } from "../utils";
+import { ProcessingStatus } from "../../shared/common-utils";
 import { TEXT2IMG_RESULT_FILENAME } from "../config/constants";
 import { getBucketName, getTableName } from "../utils";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";

@@ -2,7 +2,8 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { handler } from "../../../lib/api/get";
-import { getAudioKey, getImageKey, ProcessingStatus } from "../../../lib/utils";
+import { getAudioKey, getImageKey } from "../../../lib/utils";
+import { ProcessingStatus } from "../../../shared/common-utils";
 import { encodeBase64, mockS3BodyStream } from "../utils";
 
 // Mock AWS SDK clients

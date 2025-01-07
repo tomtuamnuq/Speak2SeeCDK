@@ -1,29 +1,5 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
-import {
-  DynamoDBTableSchema,
-  getBucketName,
-  getTableName,
-  ProcessingStatus,
-} from "../utils";
-
-interface UploadResponse {
-  id: string;
-  createdAt: number;
-  processingStatus: ProcessingStatus;
-}
-
-/**
- * Projects a DynamoDB table item into a structured response object.
- * @param item - The DynamoDB table item to project.
- * @returns An object containing the item's ID, creation timestamp, and processing status.
- */
-export function projectTableItem(item: DynamoDBTableSchema): UploadResponse {
-  return {
-    id: item.itemID,
-    createdAt: item.createdAt,
-    processingStatus: item.processingStatus,
-  };
-}
+import { getBucketName, getTableName } from "../utils";
 
 /**
  * Creates a standardized API Gateway response object.

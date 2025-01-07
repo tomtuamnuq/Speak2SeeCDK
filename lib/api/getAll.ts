@@ -6,13 +6,11 @@ import {
 } from "aws-lambda";
 import { createAPIGatewayResult, getUserID } from "./api-utils";
 import { getTableName, requestFailed } from "../utils";
-import { ProcessingStatus } from "../utils";
+import { ProcessingStatus } from "../../shared/common-utils";
+import { ProcessingItem } from "../../shared/types";
 
 const dynamoDb = new DynamoDB();
-export interface ProjectionResult {
-  id: string;
-  processingStatus: ProcessingStatus;
-}
+
 /**
  * Lambda function to retrieve all processing items for a specific user.
  * @param event - The API Gateway event containing the request details.
@@ -34,7 +32,7 @@ async function handler(
       ExpressionAttributeValues: {
         ":userID": { S: userID },
       },
-      ProjectionExpression: "itemID, processingStatus",
+      ProjectionExpression: "itemID, createdAt, processingStatus",
     });
 
     // Check query result metadata
@@ -44,9 +42,10 @@ async function handler(
     }
 
     // Extract itemIDs from the query result or default to an empty array
-    const itemIDs: ProjectionResult[] =
+    const getAllReponse: ProcessingItem[] =
       queryResult.Items?.map((item) => ({
         id: item.itemID!.S!,
+        createdAt: Number(item.createdAt!.N!),
         processingStatus: item.processingStatus!.S! as ProcessingStatus,
       })) || [];
 
@@ -54,7 +53,7 @@ async function handler(
     return createAPIGatewayResult(
       200,
       JSON.stringify({
-        itemIDs,
+        itemIDs: getAllReponse,
       })
     );
   } catch (error) {

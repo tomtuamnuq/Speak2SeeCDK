@@ -8,7 +8,6 @@ import {
 import { randomUUID } from "crypto";
 import {
   createAPIGatewayResult,
-  projectTableItem,
   getEnvironment,
   getStateMachineArn,
   getItemExpirationDays,
@@ -17,11 +16,12 @@ import {
   calculateTTL,
   DynamoDBTableSchema,
   getAudioKey,
-  ProcessingStatus,
   requestFailed,
 } from "../utils";
+import { ProcessingStatus } from "../../shared/common-utils";
 import { SFN } from "@aws-sdk/client-sfn";
 import { MAX_BINARY_AUDIO_SIZE } from "../config/constants";
+import { ProcessingItem } from "../../shared/types";
 
 const s3 = new S3();
 const sfn = new SFN();
@@ -124,8 +124,13 @@ async function handler(
       console.error("Failed to create DynamoDB item", putItemResult);
       throw new Error("Failed to create DynamoDB item");
     }
+    const uploadResponse: ProcessingItem = {
+      id: item.itemID,
+      createdAt: item.createdAt,
+      processingStatus: item.processingStatus,
+    };
 
-    return createAPIGatewayResult(200, JSON.stringify(projectTableItem(item)));
+    return createAPIGatewayResult(200, JSON.stringify(uploadResponse));
   } catch (error) {
     console.error("Error processing upload:", error);
     return createAPIGatewayResult(
