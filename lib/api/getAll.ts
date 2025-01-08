@@ -7,7 +7,7 @@ import {
 import { createAPIGatewayResult, getUserID } from "./api-utils";
 import { getTableName, requestFailed } from "../utils";
 import { ProcessingStatus } from "../../shared/common-utils";
-import { ProcessingItem } from "../../shared/types";
+import { GetAllResponse } from "../../shared/types";
 
 const dynamoDb = new DynamoDB();
 
@@ -41,23 +41,20 @@ async function handler(
       throw new Error("Failed to query DynamoDB");
     }
 
-    // Extract itemIDs from the query result or default to an empty array
-    const getAllReponse: ProcessingItem[] =
-      queryResult.Items?.map((item) => ({
-        id: item.itemID!.S!,
-        createdAt: Number(item.createdAt!.N!),
-        processingStatus: item.processingStatus!.S! as ProcessingStatus,
-      })) || [];
+    // Extract items from the query result or default to an empty array
+    const getAllReponse: GetAllResponse = {
+      items:
+        queryResult.Items?.map((item) => ({
+          id: item.itemID!.S!,
+          createdAt: Number(item.createdAt!.N!),
+          processingStatus: item.processingStatus!.S! as ProcessingStatus,
+        })) || [],
+    };
 
     // Return the list of items to the client
-    return createAPIGatewayResult(
-      200,
-      JSON.stringify({
-        itemIDs: getAllReponse,
-      })
-    );
+    return createAPIGatewayResult(200, JSON.stringify(getAllReponse));
   } catch (error) {
-    console.error("Error retrieving itemIDs:", error);
+    console.error("Error retrieving items:", error);
     return createAPIGatewayResult(
       500,
       JSON.stringify({ message: "Internal server error" })

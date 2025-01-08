@@ -7,7 +7,7 @@ import { DataStack } from "../lib/data-stack";
 import { ApiStack } from "../lib/api-stack";
 import { getConfig } from "../lib/config/environment-config";
 import { stackName } from "../shared/common-utils";
-import { addProjectTags } from "../lib/tagging";
+import { addProjectTags } from "../shared/tagging";
 import { addSecurityChecks } from "../lib/config/nag-config";
 
 const app = new App();

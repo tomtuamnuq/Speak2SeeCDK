@@ -105,7 +105,7 @@ describe("Integration Test: Speak2See REST API", () => {
     console.log(`Uploaded audio file. Received ID: ${response.data.id}`);
   }, 10000); // run up to 10 seconds
 
-  test("GET /getAll: Retrieve all itemIDs with processingStatus", async () => {
+  test("GET /getAll: Retrieve all items with processingStatus", async () => {
     const response = await axios.get(`${apiEndpoint}getAll`, {
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -114,24 +114,24 @@ describe("Integration Test: Speak2See REST API", () => {
 
     // Assertions
     expect(response.status).toBe(200);
-    expect(response.data).toHaveProperty("itemIDs");
-    expect(response.data.itemIDs).toBeInstanceOf(Array);
+    expect(response.data).toHaveProperty("items");
+    expect(response.data.items).toBeInstanceOf(Array);
 
     // Ensure the array contains at least one valid item with expected properties
-    const itemIDs = response.data.itemIDs;
-    expect(itemIDs.length).toBeGreaterThan(0);
-    itemIDs.forEach((item: { id: string; processingStatus: string }) => {
+    const items = response.data.items;
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((item: { id: string; processingStatus: string }) => {
       expect(item).toHaveProperty("id");
       expect(item).toHaveProperty("processingStatus");
       expect(typeof item.id).toBe("string");
       expect(Object.values(ProcessingStatus)).toContain(item.processingStatus);
     });
 
-    console.log(`Retrieved items: ${JSON.stringify(itemIDs)}`);
+    console.log(`Retrieved items: ${JSON.stringify(items)}`);
   });
 
   test("GET /get/{itemID}: Verify responses for finished and unfinished items", async () => {
-    // Step 1: Retrieve all itemIDs using /getAll
+    // Step 1: Retrieve all items using /getAll
     const getAllResponse = await axios.get(`${apiEndpoint}getAll`, {
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -139,14 +139,14 @@ describe("Integration Test: Speak2See REST API", () => {
     });
 
     // Assertions for /getAll
-    const itemIDs: ProcessingItem[] = getAllResponse.data.itemIDs;
-    expect(itemIDs.length).toBeGreaterThan(1);
+    const items: ProcessingItem[] = getAllResponse.data.items;
+    expect(items.length).toBeGreaterThan(1);
 
     // Find items with finished and not finished statuses
-    const finishedItem = itemIDs.find(
+    const finishedItem = items.find(
       (item) => item.processingStatus === ProcessingStatus.FINISHED
     );
-    const unfinishedItem = itemIDs.find(
+    const unfinishedItem = items.find(
       (item) =>
         item.processingStatus &&
         item.processingStatus !== ProcessingStatus.FINISHED

@@ -13,3 +13,7 @@ export interface ItemDetails {
   prompt?: string;
   processingStatus: ProcessingStatus;
 }
+
+export interface GetAllResponse {
+  items: ProcessingItem[];
+}

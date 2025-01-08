@@ -20,8 +20,9 @@ export function transcriptionHasNotBeenCreated(
     status !== ProcessingStatus.IMAGE_FAILED &&
     status !== ProcessingStatus.FINISHED
   );
-} // Create stacks with environment-specific naming
+}
 
+// Create stacks with environment-specific naming
 export function stackName(baseName: string, stage: string) {
   return `speak2see-${baseName}-${stage}`;
 }

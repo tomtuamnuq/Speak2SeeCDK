@@ -2,9 +2,9 @@ import { Tags } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
 export interface ProjectTags {
-  project: string;
-  environment: string;
-  costCenter: string;
+  readonly project: string;
+  readonly environment: string;
+  readonly costCenter: string;
 }
 
 export function addProjectTags(scope: Construct, tags: ProjectTags) {

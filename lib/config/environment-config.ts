@@ -1,4 +1,5 @@
 import { RemovalPolicy } from "aws-cdk-lib";
+import { ProjectTags } from "../../shared/tagging";
 
 export interface EnvironmentConfig {
   readonly environment: string;
@@ -12,19 +13,10 @@ export interface EnvironmentConfig {
   readonly advancedSecurity: boolean;
   readonly itemExpirationDays: number;
   readonly logRetentionDays: number;
-  readonly tags: {
-    readonly project: string;
-    readonly environment: string;
-    readonly costCenter: string;
-  };
+  readonly tags: ProjectTags;
 }
 
 export function getConfig(stage: string): EnvironmentConfig {
-  const defaultConfig = {
-    project: "Speak2See",
-    costCenter: "Speech-Services",
-  };
-
   const configs: { [key: string]: EnvironmentConfig } = {
     dev: {
       environment: "Development",
@@ -40,7 +32,8 @@ export function getConfig(stage: string): EnvironmentConfig {
       itemExpirationDays: 1,
       logRetentionDays: 1,
       tags: {
-        ...defaultConfig,
+        project: "Speak2See",
+        costCenter: "Speech-Services",
         environment: "Development",
       },
     },
@@ -58,7 +51,8 @@ export function getConfig(stage: string): EnvironmentConfig {
       itemExpirationDays: 30,
       logRetentionDays: 60,
       tags: {
-        ...defaultConfig,
+        project: "Speak2See",
+        costCenter: "Speech-Services",
         environment: "Production",
       },
     },

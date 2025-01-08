@@ -5,7 +5,7 @@ import { ProcessingStatus } from "../../../shared/common-utils";
 
 const dynamoDbMock = mockClient(DynamoDBClient);
 
-describe("Retrieve itemIDs Lambda Function", () => {
+describe("Retrieve items Lambda Function", () => {
   const tableName = "test-table";
   const userID = "mock-user-id";
 
@@ -21,7 +21,7 @@ describe("Retrieve itemIDs Lambda Function", () => {
     process.env.TABLE_NAME = tableName;
   });
 
-  test("returns itemIDs for the given userID", async () => {
+  test("returns items for the given userID", async () => {
     const mockQueryResult = {
       $metadata: { httpStatusCode: 200 },
       Items: [
@@ -44,7 +44,7 @@ describe("Retrieve itemIDs Lambda Function", () => {
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
-      itemIDs: [
+      items: [
         {
           id: "itemID-1",
           createdAt: 1234,
@@ -61,7 +61,7 @@ describe("Retrieve itemIDs Lambda Function", () => {
     expect(dynamoDbMock.calls().length).toBe(1);
   });
 
-  test("returns empty itemIDs array when no items are found", async () => {
+  test("returns empty items array when no items are found", async () => {
     const mockQueryResult = {
       $metadata: { httpStatusCode: 200 },
       Items: [],
@@ -73,7 +73,7 @@ describe("Retrieve itemIDs Lambda Function", () => {
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
-      itemIDs: [],
+      items: [],
     });
 
     expect(dynamoDbMock.calls().length).toBe(1);
