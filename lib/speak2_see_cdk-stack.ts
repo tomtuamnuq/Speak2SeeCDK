@@ -21,11 +21,11 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { FinalLambdaInput, ProcessingLambdaInput } from "./utils";
 import { ProcessingStatus } from "../shared/common-utils";
 import {
-  EXPRESS_TIMEOUT_DURATION,
   EXPRESS_TRANSCRIBE_POLLING_INTERVAL,
   LAMBDA_MEMORY_SIZE,
   LAMBDA_TIMEOUT,
 } from "./config/constants";
+import { PROCESSING_TIMEOUT_DURATION } from "../shared/limits";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import {
   ApplicationLogLevel,
@@ -114,7 +114,7 @@ export class Speak2SeeCdkStack extends Stack {
       definitionBody: DefinitionBody.fromChainable(transcribeWorkflowExpress),
       role: stateMachineRole,
       stateMachineType: StateMachineType.EXPRESS,
-      timeout: Duration.minutes(EXPRESS_TIMEOUT_DURATION),
+      timeout: Duration.minutes(PROCESSING_TIMEOUT_DURATION),
       logs: {
         destination: new LogGroup(this, "StateMachine-Logs", {
           retention: props.logRetentionDays,

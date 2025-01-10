@@ -29,8 +29,8 @@ export function getConfig(stage: string): EnvironmentConfig {
       userPoolName: "tuamnuq-speak2see-users-dev",
       removalPolicy: RemovalPolicy.RETAIN,
       advancedSecurity: false,
-      itemExpirationDays: 1,
-      logRetentionDays: 1,
+      itemExpirationDays: 14,
+      logRetentionDays: 14,
       tags: {
         project: "Speak2See",
         costCenter: "Speech-Services",

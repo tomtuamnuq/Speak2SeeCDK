@@ -20,7 +20,7 @@ import {
 } from "../utils";
 import { ProcessingStatus } from "../../shared/common-utils";
 import { SFN } from "@aws-sdk/client-sfn";
-import { MAX_BINARY_AUDIO_SIZE } from "../config/constants";
+import { MAX_BINARY_AUDIO_SIZE } from "../../shared/limits";
 import { ProcessingItem } from "../../shared/types";
 
 const s3 = new S3();

@@ -16,9 +16,9 @@ import { Construct } from "constructs";
 import {
   AUDIO_FILENAME,
   AUDIO_MEDIA_FORMAT,
-  SPOKEN_LANGUAGE_CODE,
   TRANSCRIPTION_RESULT_FILENAME,
 } from "../config/constants";
+import { SPOKEN_LANGUAGE_CODE } from "../../shared/limits";
 import { PolicyStatement, Role } from "aws-cdk-lib/aws-iam";
 
 export interface TranscribeWorkflowProps {
